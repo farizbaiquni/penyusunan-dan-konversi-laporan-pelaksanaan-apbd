@@ -67,7 +67,7 @@ const menuItems: SidebarLink[] = [
 ];
 
 export default function Home() {
-  const [activeMenu, setActiveMenu] = useState<string>("Informasi Laporan");
+  const [activeMenu, setActiveMenu] = useState<string>("Batang Tubuh");
 
   const renderContent = () => {
     switch (activeMenu) {
