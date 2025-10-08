@@ -2,11 +2,12 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import InformasiLaporan from "./components/contents/informasi-laporan";
-import BatangTubuh from "./components/contents/batang-tubuh";
-import Lampiran from "./components/contents/lampiran";
-import Preview from "./components/contents/preview";
-import Generate from "./components/contents/generate";
+import InformasiLaporan from "./components/contents/menu-informasi-laporan";
+import BatangTubuh from "./components/contents/menu-batang-tubuh";
+import Lampiran from "./components/contents/menu-lampiran";
+import Preview from "./components/contents/menu-preview";
+import Generate from "./components/contents/menu-generate";
+import TambahLampiran from "./components/contents/menu-lampiran-tambah";
 
 interface SidebarLink {
   label: string;
@@ -67,7 +68,7 @@ const menuItems: SidebarLink[] = [
 ];
 
 export default function Home() {
-  const [activeMenu, setActiveMenu] = useState<string>("Batang Tubuh");
+  const [activeMenu, setActiveMenu] = useState<string>("Tambah Lampiran");
 
   const renderContent = () => {
     switch (activeMenu) {
@@ -76,11 +77,13 @@ export default function Home() {
       case "Batang Tubuh":
         return <BatangTubuh />;
       case "Lampiran":
-        return <Lampiran />;
+        return <Lampiran setActiveMenu={setActiveMenu} />;
       case "Preview":
         return <Preview />;
       case "Generate":
         return <Generate />;
+      case "Tambah Lampiran":
+        return <TambahLampiran />;
       default:
         return (
           <>
