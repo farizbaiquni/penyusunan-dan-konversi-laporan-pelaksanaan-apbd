@@ -2,8 +2,18 @@
 
 import { useState, useRef, ChangeEvent } from "react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { LampiranData } from "../../page";
 
-export default function TambahLampiran() {
+interface TambahLampiranProps {
+  setActiveMenu: (menu: string) => void;
+  onAddLampiran: (data: Omit<LampiranData, "id">) => void;
+}
+
+export default function TambahLampiran({
+  setActiveMenu,
+  onAddLampiran,
+}: TambahLampiranProps) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
   const [romawiLampiran, setRomawiLampiran] = useState<string>("");
   const [footerWidth, setFooterWidth] = useState<number>(80);
   const [footerX, setFooterX] = useState<number>(0);
@@ -12,6 +22,7 @@ export default function TambahLampiran() {
   const [footerHeight, setFooterHeight] = useState<number>(30);
   const [footerText, setFooterText] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [file, setFile] = useState<File | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileDataRef = useRef<ArrayBuffer | null>(null); // menyimpan file agar bisa regenerate footer
@@ -20,13 +31,37 @@ export default function TambahLampiran() {
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setFile(file);
 
     const finalFooterText =
       `PERDA ${romawiLampiran}. ${footerText}`.toUpperCase();
 
     const arrayBuffer = await file.arrayBuffer();
     fileDataRef.current = arrayBuffer; // simpan file agar bisa regenerate
+    if (inputRef.current) inputRef.current.value = "";
     await addFooter(arrayBuffer, finalFooterText);
+  };
+
+  const handleSimpan = () => {
+    if (romawiLampiran.length === 0)
+      return alert("Silakan isi romawi lampiran!");
+    if (footerText.length === 0) return alert("Silakan isi footer text!");
+    if (!file)
+      return alert("Silakan unggah file lampiran PDF terlebih dahulu!");
+    onAddLampiran({
+      file,
+      romawiLampiran,
+      footerWidth,
+      footerX,
+      footerY,
+      fontSize,
+      footerHeight,
+      footerText,
+    });
+
+    alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setActiveMenu("Lampiran");
   };
 
   // Fungsi untuk menambahkan footer ke PDF
@@ -245,6 +280,13 @@ export default function TambahLampiran() {
             className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md w-full sm:w-auto"
           >
             ⬇️ Download PDF
+          </button>
+
+          <button
+            onClick={handleSimpan}
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md w-full sm:w-auto"
+          >
+            Simpan Lampiran
           </button>
         </div>
       </div>

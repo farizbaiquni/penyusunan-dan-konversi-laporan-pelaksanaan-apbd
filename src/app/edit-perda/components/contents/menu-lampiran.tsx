@@ -1,10 +1,7 @@
 "use client";
 
 import { useState } from "react";
-
-interface LampiranManagerProps {
-  setActiveMenu: (menu: string) => void;
-}
+import { LampiranData } from "../../page";
 
 interface Lampiran {
   id: number;
@@ -13,8 +10,16 @@ interface Lampiran {
   fileName: string;
 }
 
+interface LampiranManagerProps {
+  setActiveMenu: (menu: string) => void;
+  lampirans: LampiranData[];
+  onDeleteLampiran: (id: number) => void;
+}
+
 export default function LampiranManager({
   setActiveMenu,
+  lampirans,
+  onDeleteLampiran,
 }: LampiranManagerProps) {
   const [lampiran, setLampiran] = useState<Lampiran[]>([
     {
@@ -33,9 +38,6 @@ export default function LampiranManager({
   ]);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editLampiran, setEditLampiran] = useState<Lampiran | null>(null);
 
   // Fungsi pindah urutan (di modal urutan)
   function moveItem(index: number, direction: "up" | "down") {
@@ -51,47 +53,11 @@ export default function LampiranManager({
     });
   }
 
-  // Tambah lampiran
-  function addLampiran(judul: string, fileName: string) {
-    const nextRomawi = toRoman(lampiran.length + 1);
-    const newLampiran: Lampiran = {
-      id: Date.now(),
-      romawi: nextRomawi,
-      judul,
-      fileName,
-    };
-    setLampiran([...lampiran, newLampiran]);
-    setShowAddModal(false);
-  }
-
-  // Edit lampiran
-  function updateLampiran(updated: Lampiran) {
-    setLampiran((prev) => prev.map((l) => (l.id === updated.id ? updated : l)));
-    setEditLampiran(null);
-    setShowEditModal(false);
-  }
-
   // Hapus lampiran
   function deleteLampiran(id: number) {
     if (confirm("Yakin ingin menghapus lampiran ini?")) {
       setLampiran((prev) => prev.filter((l) => l.id !== id));
     }
-  }
-
-  function toRoman(num: number): string {
-    const romans = [
-      "I",
-      "II",
-      "III",
-      "IV",
-      "V",
-      "VI",
-      "VII",
-      "VIII",
-      "IX",
-      "X",
-    ];
-    return romans[num - 1] || num.toString();
   }
 
   return (
@@ -113,76 +79,54 @@ export default function LampiranManager({
           </button>
         </div>
       </div>
-
       {/* Tabel Daftar Lampiran */}
-      <table className="w-full border border-gray-200 rounded-lg text-sm">
-        <thead className="bg-gray-50">
-          <tr>
-            <th className="p-2 border">Urut</th>
-            <th className="p-2 border">Romawi</th>
-            <th className="p-2 border text-left">Judul Lampiran</th>
-            <th className="p-2 border text-left">File</th>
-            <th className="p-2 border">Aksi</th>
-          </tr>
-        </thead>
-        <tbody>
-          {lampiran.map((item, index) => (
-            <tr key={item.id} className="hover:bg-gray-50 transition-colors">
-              <td className="text-center border">{index + 1}</td>
-              <td className="text-center border font-semibold">
-                {item.romawi}
-              </td>
-              <td className="border px-2">{item.judul}</td>
-              <td className="border px-2 text-gray-500 truncate">
-                {item.fileName}
-              </td>
-              <td className="border text-center">
-                <div className="flex justify-center gap-2">
-                  <button
-                    onClick={() => {
-                      setEditLampiran(item);
-                      setShowEditModal(true);
-                    }}
-                    className="p-1 text-blue-600 hover:bg-blue-100 rounded"
-                    title="Edit"
-                  >
-                    ✏️
-                  </button>
-                  <button
-                    onClick={() => deleteLampiran(item.id)}
-                    className="p-1 text-red-600 hover:bg-red-100 rounded"
-                    title="Hapus"
-                  >
-                    🗑
-                  </button>
-                </div>
-              </td>
+      {lampirans.length === 0 ? (
+        <p className="text-gray-500 text-sm">Belum ada lampiran ditambahkan.</p>
+      ) : (
+        <table className="w-full border border-gray-200 text-sm">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border px-3 py-2 text-left">Nama File</th>
+              <th className="border px-3 py-2">Romawi</th>
+              <th className="border px-3 py-2">Teks Footer</th>
+              <th className="border px-3 py-2">Lebar</th>
+              <th className="border px-3 py-2">Font</th>
+              <th className="border px-3 py-2">Posisi (X,Y)</th>
+              <th className="border px-3 py-2">Tinggi</th>
+              <th className="border px-3 py-2 text-center">Aksi</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* ================= MODAL: Tambah Lampiran ================= */}
-      {showAddModal && (
-        <LampiranModal
-          title="Tambah Lampiran Baru"
-          onClose={() => setShowAddModal(false)}
-          onSubmit={addLampiran}
-        />
+          </thead>
+          <tbody>
+            {lampirans.map((l) => (
+              <tr key={l.id}>
+                <td className="border px-3 py-2">{l.file.name}</td>
+                <td className="border px-3 py-2 text-center">
+                  {l.romawiLampiran}
+                </td>
+                <td className="border px-3 py-2">{l.footerText}</td>
+                <td className="border px-3 py-2 text-center">
+                  {l.footerWidth}%
+                </td>
+                <td className="border px-3 py-2 text-center">{l.fontSize}</td>
+                <td className="border px-3 py-2 text-center">
+                  ({l.footerX}, {l.footerY})
+                </td>
+                <td className="border px-3 py-2 text-center">
+                  {l.footerHeight}
+                </td>
+                <td className="border px-3 py-2 text-center">
+                  <button
+                    onClick={() => onDeleteLampiran(l.id)}
+                    className="text-red-600 hover:underline text-sm"
+                  >
+                    Hapus
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
-
-      {/* ================= MODAL: Edit Lampiran ================= */}
-      {showEditModal && editLampiran && (
-        <LampiranModal
-          title="Edit Lampiran"
-          onClose={() => setShowEditModal(false)}
-          onSubmit={(judul, fileName) =>
-            updateLampiran({ ...editLampiran, judul, fileName })
-          }
-          defaultValues={editLampiran}
-        />
-      )}
-
       {/* ================= MODAL: Ubah Urutan Lampiran ================= */}
       {showOrderModal && (
         <OrderModal
@@ -191,63 +135,6 @@ export default function LampiranManager({
           onClose={() => setShowOrderModal(false)}
         />
       )}
-    </div>
-  );
-}
-
-/* ========= MODAL: Tambah / Edit Lampiran ========= */
-function LampiranModal({
-  title,
-  onClose,
-  onSubmit,
-  defaultValues,
-}: {
-  title: string;
-  onClose: () => void;
-  onSubmit: (judul: string, fileName: string) => void;
-  defaultValues?: { judul: string; fileName: string };
-}) {
-  const [judul, setJudul] = useState(defaultValues?.judul || "");
-  const [fileName, setFileName] = useState(defaultValues?.fileName || "");
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-md p-6 animate-fadeIn">
-        <h3 className="text-lg font-semibold mb-4">{title}</h3>
-
-        <label className="block text-sm mb-2">Judul Lampiran</label>
-        <input
-          value={judul}
-          onChange={(e) => setJudul(e.target.value)}
-          className="w-full border rounded-lg p-2 mb-3"
-          placeholder="Contoh: Laporan Realisasi"
-        />
-
-        <label className="block text-sm mb-2">Nama File</label>
-        <input
-          value={fileName}
-          onChange={(e) => setFileName(e.target.value)}
-          className="w-full border rounded-lg p-2 mb-4"
-          placeholder="Contoh: lampiran3.pdf"
-        />
-
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-100"
-          >
-            Batal
-          </button>
-          <button
-            onClick={() => {
-              onSubmit(judul, fileName);
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
-          >
-            Simpan
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
