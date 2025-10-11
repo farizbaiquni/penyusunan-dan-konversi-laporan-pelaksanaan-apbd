@@ -8,7 +8,6 @@ import Lampiran from "./components/contents/menu-lampiran";
 import Preview from "./components/contents/menu-preview";
 import Generate from "./components/contents/menu-generate";
 import TambahLampiran from "./components/contents/menu-lampiran-tambah";
-import LampiranManager from "./components/contents/menu-lampiran";
 
 interface SidebarLink {
   label: string;
@@ -16,49 +15,6 @@ interface SidebarLink {
   icon: string;
   badge?: number;
 }
-
-interface SidebarItemProps extends SidebarLink {
-  active: boolean;
-  onClick: () => void;
-}
-
-const SidebarItem: React.FC<SidebarItemProps> = ({
-  label,
-  icon,
-  active,
-  badge,
-  onClick,
-}) => {
-  const baseStyle =
-    "w-full mt-3 flex items-center p-2 rounded-lg transition-all duration-200";
-  const activeStyle =
-    "bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white shadow-sm";
-  const inactiveStyle =
-    "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white";
-
-  return (
-    <button
-      onClick={onClick}
-      className={`${baseStyle} ${active ? activeStyle : inactiveStyle}`}
-    >
-      <Image
-        src={icon}
-        alt={label}
-        width={22}
-        height={22}
-        className="object-contain"
-      />
-      <span className="ml-3 flex-1 truncate text-md font-medium text-left">
-        {label}
-      </span>
-      {badge && (
-        <span className="flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-600 rounded-full">
-          {badge}
-        </span>
-      )}
-    </button>
-  );
-};
 
 export interface LampiranData {
   id: number;
@@ -102,7 +58,7 @@ export default function Home() {
         return <BatangTubuh />;
       case "Lampiran":
         return (
-          <LampiranManager
+          <Lampiran
             setActiveMenu={setActiveMenu}
             lampirans={lampirans}
             onDeleteLampiran={handleDeleteLampiran}

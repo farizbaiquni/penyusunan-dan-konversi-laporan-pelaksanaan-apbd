@@ -53,13 +53,6 @@ export default function LampiranManager({
     });
   }
 
-  // Hapus lampiran
-  function deleteLampiran(id: number) {
-    if (confirm("Yakin ingin menghapus lampiran ini?")) {
-      setLampiran((prev) => prev.filter((l) => l.id !== id));
-    }
-  }
-
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md max-w-4xl mx-auto">
       <div className="flex justify-between items-center mb-4">
