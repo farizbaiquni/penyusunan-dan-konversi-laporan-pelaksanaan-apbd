@@ -1,10 +1,8 @@
 "use client";
 
 import { useState, useRef, ChangeEvent, DragEvent } from "react";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { LampiranData } from "../../page";
 import { XMarkIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
-import PembatasLampiran from "@/app/pembatas-lampiran/page";
 import { addFooter } from "@/app/_utils/add-footers";
 
 interface TambahLampiranProps {
@@ -20,11 +18,11 @@ export default function TambahLampiran({
   const [romawiLampiran, setRomawiLampiran] = useState<string>("");
   const [judulPembatasLampiran, setJudulPembatasLampiran] = useState("");
   const [footerText, setFooterText] = useState<string>("");
-  const [footerWidth, setFooterWidth] = useState<number>(80);
+  const [footerWidth, setFooterWidth] = useState<number>(91);
   const [footerX, setFooterX] = useState<number>(0);
-  const [footerY, setFooterY] = useState<number>(20);
-  const [fontSize, setFontSize] = useState<number>(9);
-  const [footerHeight, setFooterHeight] = useState<number>(30);
+  const [footerY, setFooterY] = useState<number>(27);
+  const [fontSize, setFontSize] = useState<number>(8);
+  const [footerHeight, setFooterHeight] = useState<number>(27);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
 

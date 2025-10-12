@@ -1,41 +1,107 @@
+"use client";
+
 import { useState } from "react";
-import { LampiranData } from "../../page";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { LampiranData } from "../../page";
 
 interface PreviewProps {
   batangTubuh: File | null;
   lampirans: LampiranData[];
 }
 
-function Preview({ batangTubuh, lampirans }: PreviewProps) {
+/**
+ * Menambahkan footer halaman hanya pada lampiran.
+ */
+async function addFooterToPages(
+  pdfDoc: PDFDocument,
+  startPageNumber: number,
+  footerWidth: number,
+  footerX: number,
+  footerY: number,
+  footerHeight: number,
+  fontSize: number,
+  romawiLampiran: string,
+  footerText: string
+): Promise<number> {
+  const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const pages = pdfDoc.getPages();
+  let currentPage = startPageNumber;
+
+  for (const page of pages) {
+    const { width } = page.getSize();
+    const boxWidth = (width * footerWidth) / 100;
+    const xPos = (width - boxWidth) / 2 + footerX;
+    const yPos = footerY;
+    const text = `PERDA ${romawiLampiran}. ${footerText}`.toUpperCase();
+
+    // Kotak footer
+    page.drawRectangle({
+      x: xPos,
+      y: yPos,
+      width: boxWidth,
+      height: footerHeight,
+      borderColor: rgb(0, 0, 0),
+      borderWidth: 1,
+    });
+
+    // Teks footer kiri
+    page.drawText(text, {
+      x: xPos + 10,
+      y: yPos + footerHeight / 2 - fontSize / 2,
+      size: fontSize,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+
+    // Nomor halaman kanan
+    const pageNumberText = `Halaman ${currentPage}`;
+    const textWidth = helveticaFont.widthOfTextAtSize(pageNumberText, fontSize);
+    page.drawText(pageNumberText, {
+      x: xPos + boxWidth - textWidth - 10,
+      y: yPos + footerHeight / 2 - fontSize / 2,
+      size: fontSize,
+      font: helveticaFont,
+      color: rgb(0, 0, 0),
+    });
+
+    currentPage++;
+  }
+
+  return currentPage;
+}
+
+export default function Preview({ batangTubuh, lampirans }: PreviewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  async function generateFinalPDF() {
-    // Ukuran halaman dalam poin (21 cm x 33 cm)
-    const width = 21 * 28.35;
-    const height = 33 * 28.35;
-
+  async function generateFinalPDF(previewMode: boolean) {
     if (!batangTubuh) return alert("Upload batang tubuh terlebih dahulu!");
     if (lampirans.length === 0)
       return alert("Tambahkan minimal satu lampiran!");
 
     setIsGenerating(true);
 
+    const width = 21 * 28.35; // 21 cm
+    const height = 33 * 28.35; // 33 cm
     const finalPdf = await PDFDocument.create();
-    const font = await finalPdf.embedFont(StandardFonts.TimesRomanBold);
+    const fontBold = await finalPdf.embedFont(StandardFonts.TimesRomanBold);
     const fontRegular = await finalPdf.embedFont(StandardFonts.TimesRoman);
 
-    // ✅ 1. COVER PAGE
+    // =========================
+    // 1️⃣ COVER PAGE
+    // =========================
     const coverPage = finalPdf.addPage([width, height]);
     coverPage.drawText("DOKUMEN PERDA", {
       x: 200,
       y: 500,
       size: 24,
-      font,
+      font: fontBold,
       color: rgb(0, 0.4, 0.8),
     });
 
-    // ✅ 2. BUKA BATANG TUBUH
+    // =========================
+    // 2️⃣ BATANG TUBUH (tanpa footer)
+    // =========================
     const batangBytes = await batangTubuh.arrayBuffer();
     const batangDoc = await PDFDocument.load(batangBytes);
     const batangPages = await finalPdf.copyPages(
@@ -44,11 +110,15 @@ function Preview({ batangTubuh, lampirans }: PreviewProps) {
     );
     batangPages.forEach((p) => finalPdf.addPage(p));
 
-    // ✅ 3. LOOP LAMPIRAN
+    // =========================
+    // 3️⃣ LAMPIRAN DENGAN PEMBATAS + FOOTER
+    // =========================
+    let currentPageNumber = 1; // penomoran lampiran mulai dari 1
+
     for (const lampiran of lampirans) {
-      // --- 3a. Halaman pembatas ---
+      // --- 3a. PEMBATAS LAMPIRAN (tanpa footer)
       const pembatasPage = finalPdf.addPage([width, height]);
-      const { width: pageWidth, height: pageHeight } = pembatasPage.getSize();
+      const { width: pageWidth } = pembatasPage.getSize();
       const centerX = pageWidth / 2;
 
       function drawCenteredText(
@@ -57,7 +127,7 @@ function Preview({ batangTubuh, lampirans }: PreviewProps) {
         size = 16,
         bold = false
       ) {
-        const textWidth = (bold ? font : fontRegular).widthOfTextAtSize(
+        const textWidth = (bold ? fontBold : fontRegular).widthOfTextAtSize(
           text,
           size
         );
@@ -65,14 +135,19 @@ function Preview({ batangTubuh, lampirans }: PreviewProps) {
           x: centerX - textWidth / 2,
           y,
           size,
-          font: bold ? font : fontRegular,
+          font: bold ? fontBold : fontRegular,
           color: rgb(0, 0, 0),
         });
       }
 
-      // Susunan teks seperti di file contoh
+      // --- SUSUNAN TEKS SESUAI FORMAT CONTOH ---
       let currentY = height - 90;
-      drawCenteredText("LAMPIRAN I.1", currentY, 15, false);
+      drawCenteredText(
+        `LAMPIRAN ${lampiran.romawiLampiran}`,
+        currentY,
+        15,
+        false
+      );
 
       currentY -= 50;
       drawCenteredText(
@@ -97,60 +172,83 @@ function Preview({ batangTubuh, lampirans }: PreviewProps) {
       currentY = 60;
       drawCenteredText(`TAHUN ANGGARAN ${2025}`, currentY, 16);
 
-      // --- 3b. Halaman lampiran dari file PDF ---
+      // --- 3b. LAMPIRAN PDF (dengan footer halaman)
       const lampiranBytes = await lampiran.file.arrayBuffer();
       const lampiranDoc = await PDFDocument.load(lampiranBytes);
+
+      // Tambahkan footer ke halaman lampiran
+      currentPageNumber = await addFooterToPages(
+        lampiranDoc,
+        currentPageNumber,
+        lampiran.footerWidth,
+        lampiran.footerX,
+        lampiran.footerY,
+        lampiran.footerHeight,
+        lampiran.fontSize,
+        lampiran.romawiLampiran,
+        lampiran.footerText
+      );
+
+      // Gabungkan ke dokumen utama
       const lampiranPages = await finalPdf.copyPages(
         lampiranDoc,
         lampiranDoc.getPageIndices()
       );
-
-      lampiranPages.forEach((p, idx) => {
-        // Tambahkan halaman ke dokumen utama
-        const page = finalPdf.addPage(p);
-
-        // --- 3c. Tambah footer di halaman terakhir ---
-        if (idx === lampiranPages.length - 1 && lampiran.footerText) {
-          page.drawText(lampiran.footerText, {
-            x: lampiran.footerX,
-            y: lampiran.footerY,
-            size: lampiran.fontSize,
-            font: fontRegular,
-            color: rgb(0, 0, 0),
-          });
-        }
-      });
+      lampiranPages.forEach((p) => finalPdf.addPage(p));
     }
 
-    // ✅ 4. EXPORT KE BLOB (VERSI AMAN)
-    const mergedBytes = await finalPdf.save();
-    const blob = new Blob([new Uint8Array(mergedBytes)], {
+    // =========================
+    // 4️⃣ EXPORT PDF
+    // =========================
+    const pdfBytes = await finalPdf.save();
+    const blob = new Blob([new Uint8Array(pdfBytes)], {
       type: "application/pdf",
     });
     const url = URL.createObjectURL(blob);
 
-    // ✅ 5. DOWNLOAD OTOMATIS
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "Dokumen_Perda_Final.pdf";
-    a.click();
+    if (previewMode) {
+      setPreviewUrl(url);
+    } else {
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "hasil_gabungan.pdf";
+      link.click();
+      URL.revokeObjectURL(url);
+    }
 
     setIsGenerating(false);
   }
 
   return (
     <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">🧩 PDF Compiler Otomatis</h1>
+      <h1 className="text-2xl font-semibold">
+        📘 PDF Compiler Otomatis + Footer
+      </h1>
 
-      <button
-        onClick={generateFinalPDF}
-        disabled={isGenerating}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-      >
-        {isGenerating ? "Menggabungkan..." : "Generate PDF Utuh"}
-      </button>
+      <div className="flex gap-x-3">
+        <button
+          onClick={() => generateFinalPDF(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          Preview
+        </button>
+
+        <button
+          onClick={() => generateFinalPDF(false)}
+          disabled={isGenerating}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        >
+          {isGenerating ? "Sedang memproses..." : "Generate PDF Utuh"}
+        </button>
+      </div>
+
+      {previewUrl && (
+        <iframe
+          src={previewUrl}
+          className="w-full h-[800px] border mt-4"
+          title="PDF Preview"
+        />
+      )}
     </div>
   );
 }
-
-export default Preview;
