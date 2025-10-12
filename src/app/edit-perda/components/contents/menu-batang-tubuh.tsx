@@ -3,7 +3,11 @@
 import React, { useState, DragEvent } from "react";
 import { XMarkIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 
-export default function BatangTubuh() {
+interface BatangTubuhProps {
+  setBatangTubuh: (file: File) => void;
+}
+
+export default function BatangTubuh({ setBatangTubuh }: BatangTubuhProps) {
   const [file, setFile] = useState<File | null>(null);
   const [pdfURL, setPdfURL] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -39,6 +43,7 @@ export default function BatangTubuh() {
     }
 
     setFile(selectedFile);
+    setBatangTubuh(selectedFile);
     setPdfURL(URL.createObjectURL(selectedFile));
     setMessage(`✅ File "${selectedFile.name}" siap diunggah.`);
   };

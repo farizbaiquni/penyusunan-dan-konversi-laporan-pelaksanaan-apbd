@@ -4,6 +4,8 @@ import { useState, useRef, ChangeEvent, DragEvent } from "react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { LampiranData } from "../../page";
 import { XMarkIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
+import PembatasLampiran from "@/app/pembatas-lampiran/page";
+import { addFooter } from "@/app/_utils/add-footers";
 
 interface TambahLampiranProps {
   setActiveMenu: (menu: string) => void;
@@ -16,12 +18,13 @@ export default function TambahLampiran({
 }: TambahLampiranProps) {
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [romawiLampiran, setRomawiLampiran] = useState<string>("");
+  const [judulPembatasLampiran, setJudulPembatasLampiran] = useState("");
+  const [footerText, setFooterText] = useState<string>("");
   const [footerWidth, setFooterWidth] = useState<number>(80);
   const [footerX, setFooterX] = useState<number>(0);
   const [footerY, setFooterY] = useState<number>(20);
   const [fontSize, setFontSize] = useState<number>(9);
   const [footerHeight, setFooterHeight] = useState<number>(30);
-  const [footerText, setFooterText] = useState<string>("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
 
@@ -63,14 +66,19 @@ export default function TambahLampiran({
     const file = e.target.files?.[0];
     if (!file) return;
     setFile(file);
-
-    const finalFooterText =
-      `PERDA ${romawiLampiran}. ${footerText}`.toUpperCase();
-
     const arrayBuffer = await file.arrayBuffer();
     fileDataRef.current = arrayBuffer;
     if (inputRef.current) inputRef.current.value = "";
-    await addFooter(arrayBuffer, finalFooterText);
+    await handleAddFooter(
+      footerWidth,
+      footerX,
+      footerY,
+      footerHeight,
+      fontSize,
+      romawiLampiran,
+      footerText,
+      arrayBuffer
+    );
   };
 
   const handleSimpan = () => {
@@ -82,12 +90,13 @@ export default function TambahLampiran({
     onAddLampiran({
       file,
       romawiLampiran,
+      judulPembatasLampiran,
+      footerText,
       footerWidth,
       footerX,
       footerY,
       fontSize,
       footerHeight,
-      footerText,
     });
 
     alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
@@ -101,55 +110,26 @@ export default function TambahLampiran({
   };
 
   // Fungsi untuk menambahkan footer ke PDF
-  const addFooter = async (existingPdfBytes: ArrayBuffer, text: string) => {
-    const pdfDoc = await PDFDocument.load(existingPdfBytes);
-    const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const pages = pdfDoc.getPages();
-
-    pages.forEach((page, index) => {
-      const { width } = page.getSize();
-      const boxWidth = (width * footerWidth) / 100;
-      const xPos = (width - boxWidth) / 2 + footerX;
-      const yPos = footerY;
-
-      // Kotak footer
-      page.drawRectangle({
-        x: xPos,
-        y: yPos,
-        width: boxWidth,
-        height: footerHeight,
-        borderColor: rgb(0, 0, 0),
-        borderWidth: 1,
-      });
-
-      // Teks footer kiri (judul/keterangan)
-      page.drawText(text, {
-        x: xPos + 10,
-        y: yPos + footerHeight / 2 - fontSize / 2,
-        size: fontSize,
-        font: helveticaFont,
-        color: rgb(0, 0, 0),
-        maxWidth: boxWidth - 100,
-      });
-
-      // Nomor halaman di kanan
-      const pageNumber = `Halaman ${index + 1}`;
-      const textWidth = helveticaFont.widthOfTextAtSize(pageNumber, fontSize);
-      page.drawText(pageNumber, {
-        x: xPos + boxWidth - textWidth - 10,
-        y: yPos + footerHeight / 2 - fontSize / 2,
-        size: fontSize,
-        font: helveticaFont,
-        color: rgb(0, 0, 0),
-      });
-    });
-
-    const pdfBytes = await pdfDoc.save();
-
-    const safeBytes = Uint8Array.from(pdfBytes);
-    const blob = new Blob([safeBytes.buffer], { type: "application/pdf" });
-
-    const blobUrl = URL.createObjectURL(blob);
+  const handleAddFooter = async (
+    footerWidth: number,
+    footerX: number,
+    footerY: number,
+    footerHeight: number,
+    fontSize: number,
+    romawiLampiran: string,
+    footerText: string,
+    existingPdfBytes: ArrayBuffer
+  ) => {
+    const blobUrl = await addFooter(
+      footerWidth,
+      footerX,
+      footerY,
+      footerHeight,
+      fontSize,
+      romawiLampiran,
+      footerText,
+      existingPdfBytes
+    );
     setPreviewUrl(blobUrl);
   };
 
@@ -159,9 +139,16 @@ export default function TambahLampiran({
       alert("Silakan unggah file PDF terlebih dahulu!");
       return;
     }
-    const finalFooterText =
-      `PERDA ${romawiLampiran}. ${footerText}`.toUpperCase();
-    await addFooter(fileDataRef.current, finalFooterText);
+    await handleAddFooter(
+      footerWidth,
+      footerX,
+      footerY,
+      footerHeight,
+      fontSize,
+      romawiLampiran,
+      footerText,
+      fileDataRef.current
+    );
   };
 
   // Fungsi download PDF
@@ -269,6 +256,20 @@ export default function TambahLampiran({
                   type="text"
                   value={romawiLampiran}
                   onChange={(e) => setRomawiLampiran(e.target.value)}
+                  className="p-2 border rounded-sm w-full"
+                />
+              </div>
+
+              {/* Judul Pembatas Lampiran */}
+              <div className="flex flex-col col-span-1 sm:col-span-2 lg:col-span-5">
+                <label htmlFor="pembatasLampiran" className="font-medium mb-1">
+                  Judul Pembatas Lampiran
+                </label>
+                <input
+                  id="pembatasLampiran"
+                  type="text"
+                  value={judulPembatasLampiran}
+                  onChange={(e) => setJudulPembatasLampiran(e.target.value)}
                   className="p-2 border rounded-sm w-full"
                 />
               </div>

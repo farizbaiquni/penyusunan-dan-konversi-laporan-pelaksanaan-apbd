@@ -20,12 +20,13 @@ export interface LampiranData {
   id: number;
   file: File;
   romawiLampiran: string;
+  judulPembatasLampiran: string;
+  footerText: string;
   footerWidth: number;
   footerX: number;
   footerY: number;
   fontSize: number;
   footerHeight: number;
-  footerText: string;
 }
 
 const menuItems: SidebarLink[] = [
@@ -38,6 +39,7 @@ const menuItems: SidebarLink[] = [
 
 export default function Home() {
   const [activeMenu, setActiveMenu] = useState<string>("Tambah Lampiran");
+  const [batangTubuh, setBatangTubuh] = useState<File | null>(null);
   const [lampirans, setLampirans] = useState<LampiranData[]>([]);
 
   // Tambah file baru dari komponen TambahLampiran
@@ -55,7 +57,7 @@ export default function Home() {
       case "Informasi Laporan":
         return <InformasiLaporan />;
       case "Batang Tubuh":
-        return <BatangTubuh />;
+        return <BatangTubuh setBatangTubuh={setBatangTubuh} />;
       case "Lampiran":
         return (
           <Lampiran
@@ -72,7 +74,7 @@ export default function Home() {
           />
         );
       case "Preview":
-        return <Preview />;
+        return <Preview batangTubuh={batangTubuh} lampirans={lampirans} />;
       case "Generate":
         return <Generate />;
       default:
@@ -110,7 +112,7 @@ export default function Home() {
               }`}
             >
               <Image src={item.icon} alt={item.label} width={22} height={22} />
-              <span className="ml-3 flex-1 truncate text-md font-medium text-left">
+              <span className="ml-3 text-xl flex-1 truncate text-md font-medium text-left">
                 {item.label}
               </span>
             </button>

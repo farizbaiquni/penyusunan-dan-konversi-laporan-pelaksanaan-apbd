@@ -2,6 +2,15 @@
 
 import { useState } from "react";
 import { LampiranData } from "../../page";
+import {
+  ArrowUpIcon,
+  ArrowDownIcon,
+  PlusCircleIcon,
+  Cog6ToothIcon,
+  TrashIcon,
+  XMarkIcon,
+  EyeIcon,
+} from "@heroicons/react/24/outline";
 
 interface Lampiran {
   id: number;
@@ -38,95 +47,122 @@ export default function LampiranManager({
   ]);
 
   const [showOrderModal, setShowOrderModal] = useState(false);
+  const [previewURL, setPreviewURL] = useState<string | null>(null);
 
-  // Fungsi pindah urutan (di modal urutan)
-  function moveItem(index: number, direction: "up" | "down") {
+  const moveItem = (index: number, direction: "up" | "down") => {
     setLampiran((prev) => {
-      const newList = [...prev];
-      const targetIndex = direction === "up" ? index - 1 : index + 1;
-      if (targetIndex < 0 || targetIndex >= newList.length) return newList;
-      [newList[index], newList[targetIndex]] = [
-        newList[targetIndex],
-        newList[index],
-      ];
-      return newList;
+      const updated = [...prev];
+      const target = direction === "up" ? index - 1 : index + 1;
+      if (target < 0 || target >= updated.length) return prev;
+      [updated[index], updated[target]] = [updated[target], updated[index]];
+      return updated;
     });
-  }
+  };
+
+  const handlePreview = (file: File) => {
+    const url = URL.createObjectURL(file);
+    setPreviewURL(url);
+  };
 
   return (
-    <div className="p-6 bg-white rounded-2xl shadow-md max-w-4xl mx-auto">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">📎 Daftar Lampiran</h2>
+    <div className="p-6 bg-white rounded-2xl shadow-md max-w-5xl mx-auto">
+      {/* Header */}
+      <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
+        <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
+          📎 Daftar Lampiran
+        </h2>
         <div className="flex gap-2">
           <button
             onClick={() => setActiveMenu("Tambah Lampiran")}
-            className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm"
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition"
           >
-            ➕ Tambah Lampiran
+            <PlusCircleIcon className="w-5 h-5" />
+            Tambah Lampiran
           </button>
           <button
             onClick={() => setShowOrderModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition"
           >
-            ⚙️ Ubah Urutan Lampiran
+            <Cog6ToothIcon className="w-5 h-5" />
+            Ubah Urutan
           </button>
         </div>
       </div>
+
       {/* Tabel Daftar Lampiran */}
       {lampirans.length === 0 ? (
-        <p className="text-gray-500 text-sm">Belum ada lampiran ditambahkan.</p>
+        <p className="text-gray-500 text-sm text-center py-6 border rounded-lg">
+          Belum ada lampiran yang ditambahkan.
+        </p>
       ) : (
-        <table className="w-full border border-gray-200 text-sm">
-          <thead className="bg-gray-100">
-            <tr>
-              <th className="border px-3 py-2 text-left">Nama File</th>
-              <th className="border px-3 py-2">Romawi</th>
-              <th className="border px-3 py-2">Teks Footer</th>
-              <th className="border px-3 py-2">Lebar</th>
-              <th className="border px-3 py-2">Font</th>
-              <th className="border px-3 py-2">Posisi (X,Y)</th>
-              <th className="border px-3 py-2">Tinggi</th>
-              <th className="border px-3 py-2 text-center">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lampirans.map((l) => (
-              <tr key={l.id}>
-                <td className="border px-3 py-2">{l.file.name}</td>
-                <td className="border px-3 py-2 text-center">
-                  {l.romawiLampiran}
-                </td>
-                <td className="border px-3 py-2">{l.footerText}</td>
-                <td className="border px-3 py-2 text-center">
-                  {l.footerWidth}%
-                </td>
-                <td className="border px-3 py-2 text-center">{l.fontSize}</td>
-                <td className="border px-3 py-2 text-center">
-                  ({l.footerX}, {l.footerY})
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  {l.footerHeight}
-                </td>
-                <td className="border px-3 py-2 text-center">
-                  <button
-                    onClick={() => onDeleteLampiran(l.id)}
-                    className="text-red-600 hover:underline text-sm"
-                  >
-                    Hapus
-                  </button>
-                </td>
+        <div className="overflow-x-auto rounded-lg border border-gray-200">
+          <table className="w-full text-sm text-gray-700">
+            <thead className="bg-gray-100 text-gray-700">
+              <tr>
+                <th className="px-4 py-2 text-left">Nama File</th>
+                <th className="px-4 py-2">Romawi</th>
+                <th className="px-4 py-2">Teks Footer</th>
+                <th className="px-4 py-2">Lebar</th>
+                <th className="px-4 py-2">Font</th>
+                <th className="px-4 py-2">Posisi (X,Y)</th>
+                <th className="px-4 py-2">Tinggi</th>
+                <th className="px-4 py-2 text-center">Aksi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {lampirans.map((l, i) => (
+                <tr
+                  key={l.id}
+                  className={`${
+                    i % 2 === 0 ? "bg-white" : "bg-gray-50"
+                  } hover:bg-blue-50 transition`}
+                >
+                  <td className="px-4 py-2">{l.file.name}</td>
+                  <td className="px-4 py-2 text-center">{l.romawiLampiran}</td>
+                  <td className="px-4 py-2">{l.footerText}</td>
+                  <td className="px-4 py-2 text-center">{l.footerWidth}%</td>
+                  <td className="px-4 py-2 text-center">{l.fontSize}</td>
+                  <td className="px-4 py-2 text-center">
+                    ({l.footerX}, {l.footerY})
+                  </td>
+                  <td className="px-4 py-2 text-center">{l.footerHeight}</td>
+                  <td className="px-4 py-2 text-center">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        onClick={() => handlePreview(l.file)}
+                        className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition"
+                      >
+                        <EyeIcon className="w-4 h-4" />
+                        <span>Preview</span>
+                      </button>
+                      <button
+                        onClick={() => onDeleteLampiran(l.id)}
+                        className="flex items-center gap-1 text-red-600 hover:text-red-700 transition"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                        <span>Hapus</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
-      {/* ================= MODAL: Ubah Urutan Lampiran ================= */}
+
+      {/* Modal Urutan */}
       {showOrderModal && (
         <OrderModal
           lampiran={lampiran}
           moveItem={moveItem}
           onClose={() => setShowOrderModal(false)}
         />
+      )}
+
+      {/* Modal Preview PDF */}
+      {previewURL && (
+        <PreviewModal pdfURL={previewURL} onClose={() => setPreviewURL(null)} />
       )}
     </div>
   );
@@ -143,51 +179,63 @@ function OrderModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-white rounded-2xl shadow-lg w-full max-w-3xl mx-4 p-6 animate-fadeIn">
-        <h3 className="text-lg font-semibold mb-4">Ubah Urutan Lampiran</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-4 p-6 animate-scaleIn">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-semibold text-gray-800">
+            Ubah Urutan Lampiran
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-1 rounded hover:bg-gray-100 transition"
+          >
+            <XMarkIcon className="w-6 h-6 text-gray-500" />
+          </button>
+        </div>
 
-        <table className="w-full border border-gray-200 rounded-lg text-sm">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="p-2 border">Urut</th>
-              <th className="p-2 border">Romawi</th>
-              <th className="p-2 border text-left">Judul</th>
-              <th className="p-2 border text-left">File</th>
-              <th className="p-2 border">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {lampiran.map((item, index) => (
-              <tr key={item.id} className="hover:bg-gray-50 transition">
-                <td className="text-center border">{index + 1}</td>
-                <td className="text-center border font-semibold">
-                  {item.romawi}
-                </td>
-                <td className="border px-2">{item.judul}</td>
-                <td className="border px-2 text-gray-500">{item.fileName}</td>
-                <td className="border text-center">
-                  <div className="flex justify-center gap-2">
-                    <button
-                      onClick={() => moveItem(index, "up")}
-                      className="p-1 rounded hover:bg-gray-200 disabled:opacity-30"
-                      disabled={index === 0}
-                    >
-                      ⬆️
-                    </button>
-                    <button
-                      onClick={() => moveItem(index, "down")}
-                      className="p-1 rounded hover:bg-gray-200 disabled:opacity-30"
-                      disabled={index === lampiran.length - 1}
-                    >
-                      ⬇️
-                    </button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto border rounded-lg">
+          <table className="w-full text-sm text-gray-700">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="p-2 border text-center">Urut</th>
+                <th className="p-2 border">Romawi</th>
+                <th className="p-2 border text-left">Judul</th>
+                <th className="p-2 border text-left">File</th>
+                <th className="p-2 border text-center">Aksi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {lampiran.map((item, index) => (
+                <tr key={item.id} className="hover:bg-gray-50 transition">
+                  <td className="text-center border">{index + 1}</td>
+                  <td className="text-center border font-semibold text-blue-600">
+                    {item.romawi}
+                  </td>
+                  <td className="border px-2">{item.judul}</td>
+                  <td className="border px-2 text-gray-500">{item.fileName}</td>
+                  <td className="border text-center">
+                    <div className="flex justify-center gap-2">
+                      <button
+                        onClick={() => moveItem(index, "up")}
+                        disabled={index === 0}
+                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
+                      >
+                        <ArrowUpIcon className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => moveItem(index, "down")}
+                        disabled={index === lampiran.length - 1}
+                        className="p-1 rounded hover:bg-gray-100 disabled:opacity-30"
+                      >
+                        <ArrowDownIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
         <div className="flex justify-end gap-3 mt-6">
           <button
@@ -198,11 +246,38 @@ function OrderModal({
           </button>
           <button
             onClick={onClose}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-sm"
           >
             Simpan Urutan
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ========= MODAL: Preview PDF ========= */
+function PreviewModal({
+  pdfURL,
+  onClose,
+}: {
+  pdfURL: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] relative">
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-[-20px] cursor-pointer p-1 hover:bg-gray-300 transition rounded-full bg-white"
+        >
+          <XMarkIcon className="w-6 h-6" />
+        </button>
+        <iframe
+          src={pdfURL}
+          className="w-full h-full rounded-lg border"
+          title="Preview PDF"
+        ></iframe>
       </div>
     </div>
   );
