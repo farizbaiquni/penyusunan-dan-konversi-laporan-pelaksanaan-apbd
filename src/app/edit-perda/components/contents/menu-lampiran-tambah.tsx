@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, useRef, ChangeEvent, DragEvent } from "react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { LampiranData } from "../../page";
+import { XMarkIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 
 interface TambahLampiranProps {
   setActiveMenu: (menu: string) => void;
@@ -24,8 +25,38 @@ export default function TambahLampiran({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
 
+  const [isDragging, setIsDragging] = useState(false);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const fileDataRef = useRef<ArrayBuffer | null>(null); // menyimpan file agar bisa regenerate footer
+
+  const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    validateAndSetFile(droppedFile);
+  };
+
+  const validateAndSetFile = (selectedFile?: File) => {
+    if (!selectedFile) {
+      alert("⚠️ Silakan pilih file PDF terlebih dahulu.");
+      setFile(null);
+      setPreviewUrl(null);
+      return;
+    }
+
+    if (selectedFile.type !== "application/pdf") {
+      alert("❌ Hanya file PDF yang diperbolehkan.");
+      setFile(null);
+      setPreviewUrl(null);
+      return;
+    }
+
+    setFile(selectedFile);
+    setPreviewUrl(URL.createObjectURL(selectedFile));
+  };
 
   // Ketika file dipilih
   const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -37,7 +68,7 @@ export default function TambahLampiran({
       `PERDA ${romawiLampiran}. ${footerText}`.toUpperCase();
 
     const arrayBuffer = await file.arrayBuffer();
-    fileDataRef.current = arrayBuffer; // simpan file agar bisa regenerate
+    fileDataRef.current = arrayBuffer;
     if (inputRef.current) inputRef.current.value = "";
     await addFooter(arrayBuffer, finalFooterText);
   };
@@ -62,6 +93,11 @@ export default function TambahLampiran({
     alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
     if (fileInputRef.current) fileInputRef.current.value = "";
     setActiveMenu("Lampiran");
+  };
+
+  const handleClear = () => {
+    setFile(null);
+    setPreviewUrl(null);
   };
 
   // Fungsi untuk menambahkan footer ke PDF
@@ -141,154 +177,223 @@ export default function TambahLampiran({
   };
 
   return (
-    <div className="p-6 bg-gray-100 min-h-screen text-xs">
+    <div className="p-6 bg-gray-100 min-h-screen">
       <h1 className="text-xl font-bold text-gray-800 mb-2 ml-6">
         Tambah Lampiran Perda
       </h1>
 
       <div className="bg-white p-6 rounded-xl shadow-lg mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
-          {/* Romawi Lampiran */}
-          <div className="flex flex-col col-span-1 sm:col-span-2 lg:col-span-5">
-            <label htmlFor="romawiLampiran" className="font-medium mb-1">
-              Romawi Lampiran
+        {!file ? (
+          <div className="flex items-center justify-center w-full">
+            <label
+              htmlFor="fileInput"
+              className={`flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg transition
+                ${
+                  isDragging
+                    ? "border-blue-600 bg-blue-50"
+                    : "border-blue-300 bg-white"
+                }
+              `}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+              }}
+              onDrop={handleDrop}
+            >
+              <div className="flex flex-col items-center justify-center pt-4 pb-6 pointer-events-none">
+                <svg
+                  className="w-10 h-10 mb-4 text-gray-500"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 20 16"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5
+                       5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4
+                       4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                  />
+                </svg>
+                <p className="mb-2 text-gray-500">
+                  <span className="font-semibold">Klik untuk unggah</span> atau
+                  tarik dan lepaskan
+                </p>
+                <p className="text-sm text-gray-500">Format File PDF</p>
+              </div>
+              <input
+                id="fileInput"
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
             </label>
-            <input
-              id="romawiLampiran"
-              type="text"
-              value={romawiLampiran}
-              onChange={(e) => setRomawiLampiran(e.target.value)}
-              className="p-2 border rounded-md w-full"
-            />
           </div>
-
-          {/* Keterangan Footer */}
-          <div className="flex flex-col col-span-1 sm:col-span-2 lg:col-span-5">
-            <label htmlFor="footerText" className="font-medium mb-1">
-              Keterangan Footer Halaman
-            </label>
-            <input
-              id="footerText"
-              type="text"
-              value={footerText}
-              onChange={(e) => setFooterText(e.target.value)}
-              className="p-2 border rounded-md w-full"
-            />
+        ) : (
+          <div className="flex py-3 flex-col rounded-lg items-center text-center border border-gray-800">
+            <DocumentTextIcon className="w-12 h-12 text-green-500 mb-2" />
+            <div className="flex gap-x-5 items-center">
+              <p className="text-gray-700 font-semibold">{file.name}</p>
+              <XMarkIcon
+                onClick={handleClear}
+                className="w-5 h-5 mr-1 font-extrabold text-white bg-red-500 rounded-full cursor-pointer"
+              />
+            </div>
+            <p className="text-sm text-gray-500 mb-4">
+              {(file.size / 1024 / 1024).toFixed(2)} MB
+            </p>
           </div>
+        )}
 
-          {/* Lebar Footer */}
+        {file ? (
           <div className="flex flex-col">
-            <label htmlFor="footerWidth" className="font-medium mb-1">
-              Lebar Footer (%)
-            </label>
-            <input
-              id="footerWidth"
-              type="number"
-              value={footerWidth}
-              min={10}
-              max={100}
-              onChange={(e) => setFooterWidth(Number(e.target.value))}
-              className="p-2 border rounded-md"
-            />
+            <fieldset className="border p-5 border-blue-800 grid grid-cols-1 mt-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
+              <legend className="px-2 font-semibold">INFORMASI LAMPIRAN</legend>
+              {/* Romawi Lampiran */}
+              <div className="flex flex-col col-span-1 sm:col-span-2 lg:col-span-5">
+                <label htmlFor="romawiLampiran" className="font-medium mb-1">
+                  Romawi Lampiran
+                </label>
+                <input
+                  id="romawiLampiran"
+                  type="text"
+                  value={romawiLampiran}
+                  onChange={(e) => setRomawiLampiran(e.target.value)}
+                  className="p-2 border rounded-sm w-full"
+                />
+              </div>
+
+              {/* Keterangan Footer */}
+              <div className="flex flex-col col-span-1 sm:col-span-2 lg:col-span-5">
+                <label htmlFor="footerText" className="font-medium mb-1">
+                  Keterangan Footer Halaman
+                </label>
+                <input
+                  id="footerText"
+                  type="text"
+                  value={footerText}
+                  onChange={(e) => setFooterText(e.target.value)}
+                  className="p-2 border rounded-sm w-full"
+                />
+              </div>
+
+              {/* Lebar Footer */}
+              <div className="flex flex-col">
+                <label htmlFor="footerWidth" className="font-medium mb-1">
+                  Lebar Footer (%)
+                </label>
+                <input
+                  id="footerWidth"
+                  type="number"
+                  value={footerWidth}
+                  min={10}
+                  max={100}
+                  onChange={(e) => setFooterWidth(Number(e.target.value))}
+                  className="p-2 border rounded-sm"
+                />
+              </div>
+
+              {/* Offset X */}
+              <div className="flex flex-col">
+                <label htmlFor="footerX" className="font-medium mb-1">
+                  Offset X
+                </label>
+                <input
+                  id="footerX"
+                  type="number"
+                  value={footerX}
+                  onChange={(e) => setFooterX(Number(e.target.value))}
+                  className="p-2 border rounded-sm"
+                />
+              </div>
+
+              {/* Posisi Y */}
+              <div className="flex flex-col">
+                <label htmlFor="footerY" className="font-medium mb-1">
+                  Posisi Y
+                </label>
+                <input
+                  id="footerY"
+                  type="number"
+                  value={footerY}
+                  onChange={(e) => setFooterY(Number(e.target.value))}
+                  className="p-2 border rounded-sm"
+                />
+              </div>
+
+              {/* Font Size */}
+              <div className="flex flex-col">
+                <label htmlFor="fontSize" className="font-medium mb-1">
+                  Font Size
+                </label>
+                <input
+                  id="fontSize"
+                  type="number"
+                  value={fontSize}
+                  min={5}
+                  max={30}
+                  onChange={(e) => setFontSize(Number(e.target.value))}
+                  className="p-2 border rounded-sm"
+                />
+              </div>
+
+              {/* Tinggi Footer */}
+              <div className="flex flex-col">
+                <label htmlFor="footerHeight" className="font-medium mb-1">
+                  Tinggi Footer
+                </label>
+                <input
+                  id="footerHeight"
+                  type="number"
+                  value={footerHeight}
+                  min={10}
+                  max={100}
+                  onChange={(e) => setFooterHeight(Number(e.target.value))}
+                  className="p-2 border rounded-sm"
+                />
+              </div>
+            </fieldset>
+            <div className="flex gap-x-2">
+              <button
+                onClick={regeneratePdf}
+                disabled={!fileDataRef.current}
+                className={`px-4 py-2 rounded-md w-full sm:w-auto ${
+                  fileDataRef.current
+                    ? "bg-blue-700 cursor-pointer hover:bg-blue-800 text-white"
+                    : "bg-gray-500 text-white cursor-not-allowed"
+                }`}
+              >
+                Preview Lampiran
+              </button>
+
+              <button
+                onClick={downloadPdf}
+                className="bg-blue-700 cursor-pointer hover:bg-blue-800 text-white px-4 py-2 rounded-md w-full sm:w-auto"
+              >
+                Download PDF
+              </button>
+
+              <button
+                onClick={handleSimpan}
+                className="bg-blue-700 cursor-pointer hover:bg-blue-800 text-white px-4 py-2 rounded-md w-full sm:w-auto"
+              >
+                Simpan Lampiran
+              </button>
+            </div>
           </div>
-
-          {/* Offset X */}
-          <div className="flex flex-col">
-            <label htmlFor="footerX" className="font-medium mb-1">
-              Offset X
-            </label>
-            <input
-              id="footerX"
-              type="number"
-              value={footerX}
-              onChange={(e) => setFooterX(Number(e.target.value))}
-              className="p-2 border rounded-md"
-            />
-          </div>
-
-          {/* Posisi Y */}
-          <div className="flex flex-col">
-            <label htmlFor="footerY" className="font-medium mb-1">
-              Posisi Y
-            </label>
-            <input
-              id="footerY"
-              type="number"
-              value={footerY}
-              onChange={(e) => setFooterY(Number(e.target.value))}
-              className="p-2 border rounded-md"
-            />
-          </div>
-
-          {/* Font Size */}
-          <div className="flex flex-col">
-            <label htmlFor="fontSize" className="font-medium mb-1">
-              Font Size
-            </label>
-            <input
-              id="fontSize"
-              type="number"
-              value={fontSize}
-              min={5}
-              max={30}
-              onChange={(e) => setFontSize(Number(e.target.value))}
-              className="p-2 border rounded-md"
-            />
-          </div>
-
-          {/* Tinggi Footer */}
-          <div className="flex flex-col">
-            <label htmlFor="footerHeight" className="font-medium mb-1">
-              Tinggi Footer
-            </label>
-            <input
-              id="footerHeight"
-              type="number"
-              value={footerHeight}
-              min={10}
-              max={100}
-              onChange={(e) => setFooterHeight(Number(e.target.value))}
-              className="p-2 border rounded-md"
-            />
-          </div>
-        </div>
-
-        {/* File Input & Tombol Aksi */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 mt-4">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="application/pdf"
-            onChange={handleFileChange}
-            className="p-2 border rounded-md w-full sm:w-auto"
-          />
-
-          <button
-            onClick={regeneratePdf}
-            disabled={!fileDataRef.current}
-            className={`px-4 py-2 rounded-md w-full sm:w-auto ${
-              fileDataRef.current
-                ? "bg-blue-600 hover:bg-blue-700 text-white"
-                : "bg-gray-400 text-white cursor-not-allowed"
-            }`}
-          >
-            🔁 Regenerate PDF
-          </button>
-
-          <button
-            onClick={downloadPdf}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md w-full sm:w-auto"
-          >
-            ⬇️ Download PDF
-          </button>
-
-          <button
-            onClick={handleSimpan}
-            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md w-full sm:w-auto"
-          >
-            Simpan Lampiran
-          </button>
-        </div>
+        ) : (
+          <div></div>
+        )}
       </div>
 
       {/* Preview */}

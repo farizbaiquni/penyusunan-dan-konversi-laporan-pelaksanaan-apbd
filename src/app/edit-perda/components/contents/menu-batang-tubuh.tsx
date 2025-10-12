@@ -1,20 +1,29 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  ArrowUpTrayIcon,
-  XMarkIcon,
-  DocumentTextIcon,
-} from "@heroicons/react/24/outline";
+import React, { useState, DragEvent } from "react";
+import { XMarkIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 
 export default function BatangTubuh() {
   const [file, setFile] = useState<File | null>(null);
   const [pdfURL, setPdfURL] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
+    validateAndSetFile(selectedFile);
+  };
 
+  const handleDrop = (e: DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files?.[0];
+    validateAndSetFile(droppedFile);
+  };
+
+  const validateAndSetFile = (selectedFile?: File) => {
     if (!selectedFile) {
       setMessage("⚠️ Silakan pilih file PDF terlebih dahulu.");
       setFile(null);
@@ -29,7 +38,6 @@ export default function BatangTubuh() {
       return;
     }
 
-    // Simpan ke variabel (state)
     setFile(selectedFile);
     setPdfURL(URL.createObjectURL(selectedFile));
     setMessage(`✅ File "${selectedFile.name}" siap diunggah.`);
@@ -55,26 +63,63 @@ export default function BatangTubuh() {
         </p>
       </div>
 
-      {/* Upload Card */}
-      <div className="bg-white shadow-xl rounded-2xl w-full max-w-lg p-8 border border-gray-200">
+      <div className="bg-white shadow-xl rounded-2xl w-full max-w-3xl p-8 border border-gray-200">
         {!file ? (
-          <label
-            htmlFor="fileInput"
-            className="flex flex-col items-center justify-center border-2 border-dashed border-blue-400 rounded-xl p-10 cursor-pointer hover:bg-blue-50 transition"
-          >
-            <ArrowUpTrayIcon className="w-14 h-14 text-blue-500 mb-3" />
-            <p className="text-gray-700 font-medium">
-              Klik untuk memilih atau seret file PDF ke sini
-            </p>
-            <p className="text-sm text-gray-500 mt-1">Maksimal 10 MB</p>
-            <input
-              id="fileInput"
-              type="file"
-              accept="application/pdf"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-          </label>
+          <div className="flex items-center justify-center w-full">
+            <label
+              htmlFor="fileInput"
+              className={`flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg transition
+                ${
+                  isDragging
+                    ? "border-blue-600 bg-blue-50"
+                    : "border-blue-300 bg-white"
+                }
+              `}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(true);
+              }}
+              onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+              }}
+              onDrop={handleDrop}
+            >
+              <div className="flex flex-col items-center justify-center pt-4 pb-6 pointer-events-none">
+                <svg
+                  className="w-10 h-10 mb-4 text-gray-500"
+                  aria-hidden="true"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 20 16"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5
+                       5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4
+                       4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"
+                  />
+                </svg>
+                <p className="mb-2 text-gray-500">
+                  <span className="font-semibold">Klik untuk unggah</span> atau
+                  tarik dan lepaskan
+                </p>
+                <p className="text-sm text-gray-500">Format File PDF</p>
+              </div>
+              <input
+                id="fileInput"
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </label>
+          </div>
         ) : (
           <div className="flex flex-col items-center text-center">
             <DocumentTextIcon className="w-12 h-12 text-green-500 mb-2" />
@@ -88,7 +133,7 @@ export default function BatangTubuh() {
                 onClick={() => setMessage("✅ File siap digunakan.")}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg shadow transition"
               >
-                Gunakan Dokumen
+                Simpan
               </button>
               <button
                 onClick={handleClear}
@@ -108,14 +153,11 @@ export default function BatangTubuh() {
 
       {/* Preview PDF */}
       {pdfURL && (
-        <div className="mt-10 w-full max-w-5xl bg-white shadow-lg border rounded-xl overflow-hidden">
-          <div className="bg-blue-600 text-white text-sm font-semibold py-2 px-4">
-            Pratinjau Batang Tubuh Perda
+        <div className="mt-10 w-full max-w-5xl bg-white shadow-lg border rounded-lg overflow-hidden">
+          <div className="bg-blue-800 text-white font-semibold py-4 px-4">
+            PREVIEW BATANG TUBUH
           </div>
-          <iframe
-            src={pdfURL}
-            className="w-full h-[600px] border-none"
-          ></iframe>
+          <iframe src={pdfURL} className="w-full h-[600px] border-none" />
         </div>
       )}
     </div>
