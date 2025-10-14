@@ -112,7 +112,7 @@ export default function Home() {
               }`}
             >
               <Image src={item.icon} alt={item.label} width={22} height={22} />
-              <span className="ml-3 text-xl flex-1 truncate text-md font-medium text-left">
+              <span className="ml-3 text-medium flex-1 truncate text-md text-left">
                 {item.label}
               </span>
             </button>
