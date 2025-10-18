@@ -8,11 +8,13 @@ import Lampiran from "./components/contents/menu-lampiran";
 import Preview from "./components/contents/menu-preview";
 import Generate from "./components/contents/menu-generate";
 import TambahLampiran from "./components/contents/menu-lampiran-tambah";
+import { PDFDocument } from "pdf-lib";
 
 export enum MenuOption {
   INFORMASI_LAPORAN = "informasi-laporan",
   BATANG_TUBUH = "batang-tubuh",
   LAMPIRAN_UTAMA = "lampiran-utama",
+  TAMBAH_LAMPIRAN_UTAMA = "Ttambah-lampiran-utama",
   LAMPIRAN_PENDUKUNG = "lampiran-pendukung",
   PREVIEW = "preview",
   GENERATE = "generate",
@@ -48,6 +50,7 @@ export interface LampiranData {
   footerY: number;
   fontSize: number;
   footerHeight: number;
+  jumlahHalaman: number;
 }
 
 export default function Home() {
@@ -101,16 +104,29 @@ export default function Home() {
     },
   ];
 
-  const handleAddLampiran = (data: Omit<LampiranData, "id">) => {
+  const updateLampiranOrder = (newOrder: LampiranData[]) => {
+    setLampirans(newOrder);
+  };
+
+  const handleAddLampiran = async (
+    data: Omit<LampiranData, "id" | "jumlahHalaman">
+  ) => {
+    const pages = await getPdfPageCount(data.file);
     const newLampiran: LampiranData = {
       ...data,
       id: Date.now(),
       urutan: lampirans.length + 1,
+      jumlahHalaman: pages,
     };
     setLampirans((prev) =>
       [...prev, newLampiran].sort((a, b) => a.urutan - b.urutan)
     );
-    setJumlahLampiranUtama((prev) => prev + 1);
+  };
+
+  const getPdfPageCount = async (file: File): Promise<number> => {
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    return pdfDoc.getPageCount();
   };
 
   const handleDeleteLampiran = (id: number) => {
@@ -156,9 +172,10 @@ export default function Home() {
             setActiveMenu={setActiveMenu}
             lampirans={lampirans}
             onDeleteLampiran={handleDeleteLampiran}
+            updateLampiranOrder={updateLampiranOrder}
           />
         );
-      case MenuOption.LAMPIRAN_PENDUKUNG:
+      case MenuOption.TAMBAH_LAMPIRAN_UTAMA:
         return (
           <TambahLampiran
             setActiveMenu={setActiveMenu}

@@ -270,13 +270,21 @@ export default function TambahLampiran({
     );
   };
 
-  const handleSimpan = () => {
+  const handleSimpan = async () => {
     if (romawiLampiran.length === 0)
       return alert("Silakan isi romawi lampiran!");
     if (footerText.length === 0) return alert("Silakan isi footer text!");
     if (!file)
       return alert("Silakan unggah file lampiran PDF terlebih dahulu!");
-    const urutan = 0;
+
+    // Hitung jumlah halaman PDF
+    const arrayBuffer = await file.arrayBuffer();
+    const pdfDoc = await PDFDocument.load(arrayBuffer);
+    const jumlahHalaman = pdfDoc.getPageCount();
+
+    // Urutan lampiran
+    const urutan = 1; // bisa disesuaikan dengan lampirans.length + 1 di parent
+
     onAddLampiran({
       urutan,
       file,
@@ -288,6 +296,7 @@ export default function TambahLampiran({
       footerY,
       fontSize,
       footerHeight,
+      jumlahHalaman, // baru
     });
 
     alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
