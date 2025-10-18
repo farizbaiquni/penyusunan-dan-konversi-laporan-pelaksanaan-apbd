@@ -1,12 +1,12 @@
 "use client";
 
 import { useState, useRef, ChangeEvent, DragEvent } from "react";
-import { LampiranData } from "../../page";
+import { LampiranData, MenuOption } from "../../page";
 import { XMarkIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
 interface TambahLampiranProps {
-  setActiveMenu: (menu: string) => void;
+  setActiveMenu: (menu: MenuOption) => void;
   onAddLampiran: (data: Omit<LampiranData, "id">) => void;
 }
 
@@ -276,7 +276,9 @@ export default function TambahLampiran({
     if (footerText.length === 0) return alert("Silakan isi footer text!");
     if (!file)
       return alert("Silakan unggah file lampiran PDF terlebih dahulu!");
+    const urutan = 0;
     onAddLampiran({
+      urutan,
       file,
       romawiLampiran,
       judulPembatasLampiran,
@@ -290,7 +292,7 @@ export default function TambahLampiran({
 
     alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
     if (fileInputRef.current) fileInputRef.current.value = "";
-    setActiveMenu("Lampiran");
+    setActiveMenu(MenuOption.LAMPIRAN_UTAMA);
   };
 
   const handleClear = () => {

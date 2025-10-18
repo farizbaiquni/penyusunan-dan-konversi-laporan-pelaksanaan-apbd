@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import InformasiLaporan from "./components/contents/menu-informasi-laporan";
 import BatangTubuh from "./components/contents/menu-batang-tubuh";
@@ -8,6 +8,15 @@ import Lampiran from "./components/contents/menu-lampiran";
 import Preview from "./components/contents/menu-preview";
 import Generate from "./components/contents/menu-generate";
 import TambahLampiran from "./components/contents/menu-lampiran-tambah";
+
+export enum MenuOption {
+  INFORMASI_LAPORAN = "informasi-laporan",
+  BATANG_TUBUH = "batang-tubuh",
+  LAMPIRAN_UTAMA = "lampiran-utama",
+  LAMPIRAN_PENDUKUNG = "lampiran-pendukung",
+  PREVIEW = "preview",
+  GENERATE = "generate",
+}
 
 export interface InformasiDokumenType {
   tahun: number;
@@ -21,7 +30,7 @@ export interface InformasiDokumenType {
 }
 
 interface SidebarLink {
-  label: string;
+  label: MenuOption;
   href: string;
   icon: string;
   badge?: number;
@@ -29,6 +38,7 @@ interface SidebarLink {
 
 export interface LampiranData {
   id: number;
+  urutan: number;
   file: File;
   romawiLampiran: string;
   judulPembatasLampiran: string;
@@ -40,57 +50,94 @@ export interface LampiranData {
   footerHeight: number;
 }
 
-const menuItems: SidebarLink[] = [
-  { label: "Informasi Laporan", href: "#", icon: "/images/edit/informasi.png" },
-  { label: "Batang Tubuh", href: "#", icon: "/images/edit/batang-tubuh.png" },
-  { label: "Lampiran", href: "#", icon: "/images/edit/lampiran.png", badge: 7 },
-  { label: "Preview", href: "#", icon: "/images/edit/preview.png" },
-  { label: "Generate", href: "#", icon: "/images/edit/generate.png" },
-];
-
 export default function Home() {
-  const [activeMenu, setActiveMenu] = useState<string>("Informasi Laporan");
+  const [activeMenu, setActiveMenu] = useState<MenuOption>(
+    MenuOption.INFORMASI_LAPORAN
+  );
+
   const [batangTubuhFile, setBatangTubuhFile] = useState<File | null>(null);
   const [batangTubuhURL, setBatangTubuhURL] = useState<string | null>(null);
-  const [batangTubuh, setBatangTubuh] = useState<File | null>(null);
   const [lampirans, setLampirans] = useState<LampiranData[]>([]);
 
   const [tahun, setTahun] = useState<number>(2025);
   const [jumlahLampiranUtama, setJumlahLampiranUtama] = useState(0);
   const [jumlahLampiranPendukung, setJumlahLampiranPendukung] = useState(0);
-  const [isUploadBatangTubuh, setIsUploadBatangTubuh] =
-    useState<boolean>(false);
-  const [jumlahHalaman, setJumlahHalaman] = useState(0);
+  const [isUploadBatangTubuh, setIsUploadBatangTubuh] = useState<boolean>(
+    batangTubuhFile !== null
+  );
   const [nomorPerdaPerbup, setNomorPerdaPerbup] = useState<number | null>(null);
   const [namaBupati, setNamaBupati] = useState<string>(
     "Dyah Kartika Permanasari"
   );
 
+  const menuItems: SidebarLink[] = [
+    {
+      label: MenuOption.INFORMASI_LAPORAN,
+      href: "#",
+      icon: "/images/edit/informasi.png",
+    },
+    {
+      label: MenuOption.BATANG_TUBUH,
+      href: "#",
+      icon: "/images/edit/batang-tubuh.png",
+    },
+    {
+      label: MenuOption.LAMPIRAN_UTAMA,
+      href: "#",
+      icon: "/images/edit/lampiran-utama.png",
+      badge: jumlahLampiranUtama,
+    },
+    {
+      label: MenuOption.LAMPIRAN_PENDUKUNG,
+      href: "#",
+      icon: "/images/edit/lampiran-pendukung.png",
+      badge: jumlahLampiranPendukung,
+    },
+    { label: MenuOption.PREVIEW, href: "#", icon: "/images/edit/preview.png" },
+    {
+      label: MenuOption.GENERATE,
+      href: "#",
+      icon: "/images/edit/generate.png",
+    },
+  ];
+
   const handleAddLampiran = (data: Omit<LampiranData, "id">) => {
-    const newLampiran: LampiranData = { ...data, id: Date.now() };
-    setLampirans((prev) => [...prev, newLampiran]);
+    const newLampiran: LampiranData = {
+      ...data,
+      id: Date.now(),
+      urutan: lampirans.length + 1,
+    };
+    setLampirans((prev) =>
+      [...prev, newLampiran].sort((a, b) => a.urutan - b.urutan)
+    );
+    setJumlahLampiranUtama((prev) => prev + 1);
   };
 
   const handleDeleteLampiran = (id: number) => {
     setLampirans((prev) => prev.filter((l) => l.id !== id));
   };
 
+  useEffect(() => {
+    setIsUploadBatangTubuh(batangTubuhFile !== null);
+  }, [batangTubuhFile]);
+
   const renderContent = () => {
     switch (activeMenu) {
-      case "Informasi Laporan":
+      case MenuOption.INFORMASI_LAPORAN:
         return (
           <InformasiLaporan
             tahun={tahun}
             jumlahLampiranUtama={jumlahLampiranUtama}
             jumlahLampiranPendukung={jumlahLampiranPendukung}
             isUploadBatangTubuh={isUploadBatangTubuh}
-            jumlahHalaman={jumlahHalaman}
             nomorPerdaPerbup={nomorPerdaPerbup}
             namaBupati={namaBupati}
             setTahun={setTahun}
+            setNomorPerdaPerbup={setNomorPerdaPerbup}
+            setNamaBupati={setNamaBupati}
           />
         );
-      case "Batang Tubuh":
+      case MenuOption.BATANG_TUBUH:
         return (
           <BatangTubuh
             batangTubuhFile={batangTubuhFile}
@@ -103,7 +150,7 @@ export default function Home() {
           />
         );
 
-      case "Lampiran":
+      case MenuOption.LAMPIRAN_UTAMA:
         return (
           <Lampiran
             setActiveMenu={setActiveMenu}
@@ -111,18 +158,18 @@ export default function Home() {
             onDeleteLampiran={handleDeleteLampiran}
           />
         );
-      case "Tambah Lampiran":
+      case MenuOption.LAMPIRAN_PENDUKUNG:
         return (
           <TambahLampiran
             setActiveMenu={setActiveMenu}
             onAddLampiran={handleAddLampiran}
           />
         );
-      case "Preview":
-        return <Preview batangTubuh={batangTubuh} lampirans={lampirans} />;
-      case "Generate":
+      case MenuOption.PREVIEW:
+        return <Preview batangTubuh={batangTubuhFile} lampirans={lampirans} />;
+      case MenuOption.GENERATE:
         // ✅ Pindahkan logika download ke sini
-        return <Generate batangTubuh={batangTubuh} lampirans={lampirans} />;
+        return <Generate batangTubuh={batangTubuhFile} lampirans={lampirans} />;
       default:
         return (
           <div className="p-4">
@@ -139,7 +186,7 @@ export default function Home() {
     <div className="flex min-h-screen bg-yellow-100">
       {/* Sidebar */}
       <aside className="fixed top-0 left-0 h-screen w-64 bg-white shadow-md">
-        <div className="flex items-center justify-center px-6 border-b border-gray-200">
+        <div className="flex items-center justify-center px-6 border-b border-gray-200 py-2">
           <Image src="/images/bank.png" alt="Logo" width={40} height={40} />
           <span className="ml-3 mt-2 text-2xl font-bold text-gray-700">
             TUNTAS

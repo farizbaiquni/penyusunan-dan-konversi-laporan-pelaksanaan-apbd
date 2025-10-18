@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { LampiranData } from "../../page";
+import { LampiranData, MenuOption } from "../../page";
 import {
   ArrowUpIcon,
   ArrowDownIcon,
@@ -20,7 +20,7 @@ interface Lampiran {
 }
 
 interface LampiranManagerProps {
-  setActiveMenu: (menu: string) => void;
+  setActiveMenu: (menu: MenuOption) => void;
   lampirans: LampiranData[];
   onDeleteLampiran: (id: number) => void;
 }
@@ -73,7 +73,7 @@ export default function LampiranManager({
         </h2>
         <div className="flex gap-2">
           <button
-            onClick={() => setActiveMenu("Tambah Lampiran")}
+            onClick={() => setActiveMenu(MenuOption.LAMPIRAN_UTAMA)}
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition"
           >
             <PlusCircleIcon className="w-5 h-5" />
