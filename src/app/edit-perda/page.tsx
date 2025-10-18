@@ -9,12 +9,14 @@ import Preview from "./components/contents/menu-preview";
 import Generate from "./components/contents/menu-generate";
 import TambahLampiran from "./components/contents/menu-lampiran-tambah";
 import { PDFDocument } from "pdf-lib";
+import EditLampiranUtama from "./components/contents/menu-edit-lampiran-utama";
 
 export enum MenuOption {
   INFORMASI_LAPORAN = "informasi-laporan",
   BATANG_TUBUH = "batang-tubuh",
   LAMPIRAN_UTAMA = "lampiran-utama",
-  TAMBAH_LAMPIRAN_UTAMA = "Ttambah-lampiran-utama",
+  TAMBAH_LAMPIRAN_UTAMA = "Tambah-lampiran-utama",
+  EDIT_LAMPIRAN_UTAMA = "Edit-lampiran-utama",
   LAMPIRAN_PENDUKUNG = "lampiran-pendukung",
   PREVIEW = "preview",
   GENERATE = "generate",
@@ -61,6 +63,9 @@ export default function Home() {
   const [batangTubuhFile, setBatangTubuhFile] = useState<File | null>(null);
   const [batangTubuhURL, setBatangTubuhURL] = useState<string | null>(null);
   const [lampirans, setLampirans] = useState<LampiranData[]>([]);
+  const [editedLampiran, setEditedLampiran] = useState<LampiranData | null>(
+    null
+  );
 
   const [tahun, setTahun] = useState<number>(2025);
   const [jumlahLampiranUtama, setJumlahLampiranUtama] = useState(0);
@@ -133,6 +138,19 @@ export default function Home() {
     setLampirans((prev) => prev.filter((l) => l.id !== id));
   };
 
+  const onEditLampiranUtama = (updatedLampiran: LampiranData) => {
+    setLampirans((prev) =>
+      prev.map((l) =>
+        l.id === updatedLampiran.id ? { ...l, ...updatedLampiran } : l
+      )
+    );
+  };
+
+  const handleOnClickEditLampiran = (lampiran: LampiranData) => {
+    setEditedLampiran(lampiran);
+    setActiveMenu(MenuOption.EDIT_LAMPIRAN_UTAMA);
+  };
+
   useEffect(() => {
     setIsUploadBatangTubuh(batangTubuhFile !== null);
   }, [batangTubuhFile]);
@@ -173,6 +191,7 @@ export default function Home() {
             lampirans={lampirans}
             onDeleteLampiran={handleDeleteLampiran}
             updateLampiranOrder={updateLampiranOrder}
+            handleOnClickEditLampiran={handleOnClickEditLampiran}
           />
         );
       case MenuOption.TAMBAH_LAMPIRAN_UTAMA:
@@ -180,6 +199,15 @@ export default function Home() {
           <TambahLampiran
             setActiveMenu={setActiveMenu}
             onAddLampiran={handleAddLampiran}
+          />
+        );
+      case MenuOption.EDIT_LAMPIRAN_UTAMA:
+        if (!editedLampiran) return null;
+        return (
+          <EditLampiranUtama
+            setActiveMenu={setActiveMenu}
+            lampiran={editedLampiran}
+            onEditLampiranUtama={onEditLampiranUtama}
           />
         );
       case MenuOption.PREVIEW:
