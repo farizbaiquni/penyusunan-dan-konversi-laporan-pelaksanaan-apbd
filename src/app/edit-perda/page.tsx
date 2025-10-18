@@ -9,6 +9,17 @@ import Preview from "./components/contents/menu-preview";
 import Generate from "./components/contents/menu-generate";
 import TambahLampiran from "./components/contents/menu-lampiran-tambah";
 
+export interface InformasiDokumenType {
+  tahun: number;
+  jumlahLampiranUtama: number;
+  jumlahLampiranPendukung: number;
+  sudahUploadBatangTubuh: boolean;
+  jumlahHalaman: number;
+  nomorPerdaPerbup: string;
+  tanggalPerdaPerbup: string;
+  namaBupati: string;
+}
+
 interface SidebarLink {
   label: string;
   href: string;
@@ -38,11 +49,23 @@ const menuItems: SidebarLink[] = [
 ];
 
 export default function Home() {
-  const [activeMenu, setActiveMenu] = useState<string>("Tambah Lampiran");
+  const [activeMenu, setActiveMenu] = useState<string>("Informasi Laporan");
+  const [batangTubuhFile, setBatangTubuhFile] = useState<File | null>(null);
+  const [batangTubuhURL, setBatangTubuhURL] = useState<string | null>(null);
   const [batangTubuh, setBatangTubuh] = useState<File | null>(null);
   const [lampirans, setLampirans] = useState<LampiranData[]>([]);
 
-  // Tambah file baru dari komponen TambahLampiran
+  const [tahun, setTahun] = useState<number>(2025);
+  const [jumlahLampiranUtama, setJumlahLampiranUtama] = useState(0);
+  const [jumlahLampiranPendukung, setJumlahLampiranPendukung] = useState(0);
+  const [isUploadBatangTubuh, setIsUploadBatangTubuh] =
+    useState<boolean>(false);
+  const [jumlahHalaman, setJumlahHalaman] = useState(0);
+  const [nomorPerdaPerbup, setNomorPerdaPerbup] = useState<number | null>(null);
+  const [namaBupati, setNamaBupati] = useState<string>(
+    "Dyah Kartika Permanasari"
+  );
+
   const handleAddLampiran = (data: Omit<LampiranData, "id">) => {
     const newLampiran: LampiranData = { ...data, id: Date.now() };
     setLampirans((prev) => [...prev, newLampiran]);
@@ -55,9 +78,31 @@ export default function Home() {
   const renderContent = () => {
     switch (activeMenu) {
       case "Informasi Laporan":
-        return <InformasiLaporan />;
+        return (
+          <InformasiLaporan
+            tahun={tahun}
+            jumlahLampiranUtama={jumlahLampiranUtama}
+            jumlahLampiranPendukung={jumlahLampiranPendukung}
+            isUploadBatangTubuh={isUploadBatangTubuh}
+            jumlahHalaman={jumlahHalaman}
+            nomorPerdaPerbup={nomorPerdaPerbup}
+            namaBupati={namaBupati}
+            setTahun={setTahun}
+          />
+        );
       case "Batang Tubuh":
-        return <BatangTubuh setBatangTubuh={setBatangTubuh} />;
+        return (
+          <BatangTubuh
+            batangTubuhFile={batangTubuhFile}
+            setBatangTubuh={(file: File | null) => {
+              setBatangTubuhFile(file);
+              !file
+                ? setBatangTubuhURL(null)
+                : setBatangTubuhURL(URL.createObjectURL(file));
+            }}
+          />
+        );
+
       case "Lampiran":
         return (
           <Lampiran
@@ -76,7 +121,8 @@ export default function Home() {
       case "Preview":
         return <Preview batangTubuh={batangTubuh} lampirans={lampirans} />;
       case "Generate":
-        return <Generate />;
+        // ✅ Pindahkan logika download ke sini
+        return <Generate batangTubuh={batangTubuh} lampirans={lampirans} />;
       default:
         return (
           <div className="p-4">
@@ -93,7 +139,7 @@ export default function Home() {
     <div className="flex min-h-screen bg-yellow-100">
       {/* Sidebar */}
       <aside className="fixed top-0 left-0 h-screen w-64 bg-white shadow-md">
-        <div className="flex items-center justify-center px-6 py-6 border-b border-gray-200">
+        <div className="flex items-center justify-center px-6 border-b border-gray-200">
           <Image src="/images/bank.png" alt="Logo" width={40} height={40} />
           <span className="ml-3 mt-2 text-2xl font-bold text-gray-700">
             TUNTAS

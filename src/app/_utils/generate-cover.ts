@@ -1,16 +1,15 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-async function generateCover(tahun: number) {
+export async function generateCover(tahun: number, finalPdf: PDFDocument) {
   // Ukuran halaman dalam poin (21 cm x 33 cm)
   const width = 21 * 28.35;
   const height = 33 * 28.35;
 
   // Buat dokumen PDF baru
-  const pdfDoc = await PDFDocument.create();
-  const page = pdfDoc.addPage([width, height]);
+  const page = finalPdf.addPage([width, height]);
 
-  const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const fontBold = await finalPdf.embedFont(StandardFonts.HelveticaBold);
+  const fontRegular = await finalPdf.embedFont(StandardFonts.Helvetica);
 
   const { width: pageWidth, height: pageHeight } = page.getSize();
   const centerX = pageWidth / 2;
@@ -34,7 +33,7 @@ async function generateCover(tahun: number) {
   // ✅ Tambah gambar di tengah horizontal
   const imageUrl = "/images/lambang-garuda-cover.png";
   const imageBytes = await fetch(imageUrl).then((res) => res.arrayBuffer());
-  const pngImage = await pdfDoc.embedPng(imageBytes);
+  const pngImage = await finalPdf.embedPng(imageBytes);
 
   const imageWidth = 110;
   const imageHeight = 110;

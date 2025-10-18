@@ -1,9 +1,18 @@
 "use client";
 
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from "pdf-lib";
+
+export interface DaftarIsiLampiran {
+  romawi: string;
+  judul: string;
+  nomorHalaman: number;
+}
 
 export default function GeneratedDaftarIsi() {
-  async function generateDaftarIsi(tahun: number) {
+  async function generateDaftarIsi(
+    tahun: number,
+    entries: DaftarIsiLampiran[]
+  ) {
     const width = 21 * 28.35;
     const height = 33 * 28.35;
 
@@ -24,7 +33,7 @@ export default function GeneratedDaftarIsi() {
     // --- Utility: wrap text otomatis ---
     function wrapText(
       text: string,
-      font: any,
+      font: PDFFont,
       fontSize: number,
       maxWidth: number
     ) {
@@ -32,7 +41,7 @@ export default function GeneratedDaftarIsi() {
       const lines: string[] = [];
       let currentLine = "";
 
-      for (let word of words) {
+      for (const word of words) {
         const testLine = currentLine ? currentLine + " " + word : word;
         const textWidth = font.widthOfTextAtSize(testLine, fontSize);
         if (textWidth > maxWidth) {
@@ -47,7 +56,7 @@ export default function GeneratedDaftarIsi() {
     }
 
     // --- Draw header untuk tiap halaman ---
-    function drawPageHeader(page: any, y: number) {
+    function drawPageHeader(page: PDFPage, y: number) {
       const headerY = y;
       page.drawText("URAIAN", {
         x: marginLeft,
@@ -78,7 +87,11 @@ export default function GeneratedDaftarIsi() {
     }
 
     // --- Draw satu entri ---
-    function drawEntry(page: any, entry: any, startY: number) {
+    function drawEntry(
+      page: PDFPage,
+      entry: DaftarIsiLampiran,
+      startY: number
+    ) {
       const size = 11;
       const font = fontRegular;
       const lineHeight = size + 4;
@@ -86,7 +99,7 @@ export default function GeneratedDaftarIsi() {
       const maxTextWidth = usableWidth - rightColumnWidth;
 
       // Lampiran dan Romawi
-      page.drawText(`${entry.romawi}. LAMPIRAN I PERATURAN BUPATI KENDAL`, {
+      page.drawText(`LAMPIRAN ${entry.romawi} PERATURAN BUPATI KENDAL`, {
         x: marginLeft,
         y: startY,
         size,
@@ -94,8 +107,8 @@ export default function GeneratedDaftarIsi() {
         color: rgb(0, 0, 0),
       });
 
-      let uraianStartY = startY - lineHeight;
-      const lines = wrapText(entry.uraian, font, size, maxTextWidth);
+      const uraianStartY = startY - lineHeight;
+      const lines = wrapText(entry.judul, font, size, maxTextWidth);
 
       for (let i = 0; i < lines.length; i++) {
         const y = uraianStartY - i * lineHeight;
@@ -110,8 +123,11 @@ export default function GeneratedDaftarIsi() {
 
       const lastLineY = uraianStartY - (lines.length - 1) * lineHeight;
 
-      const halamanWidth = font.widthOfTextAtSize(entry.halaman, size);
-      page.drawText(entry.halaman, {
+      const halamanWidth = font.widthOfTextAtSize(
+        entry.nomorHalaman.toString(),
+        size
+      );
+      page.drawText(entry.nomorHalaman.toString(), {
         x: pageWidth - marginRight - halamanWidth,
         y: lastLineY,
         size,
@@ -133,7 +149,12 @@ export default function GeneratedDaftarIsi() {
 
     // --- Header Halaman Pertama ---
     let currentY = height - 100;
-    const drawCentered = (text: string, y: number, font: any, size = 12) => {
+    const drawCentered = (
+      text: string,
+      y: number,
+      font: PDFFont,
+      size = 12
+    ) => {
       const w = font.widthOfTextAtSize(text, size);
       const x = centerX - w / 2;
       page.drawText(text, { x, y, font, size });
@@ -164,20 +185,9 @@ export default function GeneratedDaftarIsi() {
     // Header kolom pertama
     currentY = drawPageHeader(page, headerLineY - 20);
 
-    // --- Daftar entri ---
-    const entries = Array.from({ length: 25 }, (_, i) => ({
-      romawi: (i + 1).toString(),
-      uraian: `Contoh uraian entri nomor ${
-        i + 1
-      } yang mungkin cukup panjang untuk mengetes pembungkus teks otomatis.`,
-      halaman: `${i + 1}`,
-    }));
-
     // --- Loop entri dengan auto new page ---
     for (const e of entries) {
-      // Cek apakah masih cukup ruang
       if (currentY < bottomMargin) {
-        // Halaman baru
         page = pdfDoc.addPage([width, height]);
         currentY = height - 100;
         currentY = drawPageHeader(page, currentY);
@@ -188,7 +198,9 @@ export default function GeneratedDaftarIsi() {
 
     // --- Simpan PDF ---
     const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes.buffer], { type: "application/pdf" });
+    const blob = new Blob([new Uint8Array(pdfBytes)], {
+      type: "application/pdf",
+    });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -197,10 +209,24 @@ export default function GeneratedDaftarIsi() {
     URL.revokeObjectURL(url);
   }
 
+  // --- Contoh penggunaan ---
+  const contohEntries: DaftarIsiLampiran[] = Array.from(
+    { length: 25 },
+    (_, i) => ({
+      romawi: (i + 1).toString(),
+      judul: `Contoh uraian entri nomor ${
+        i + 1
+      } yang mungkin cukup panjang untuk mengetes pembungkus teks otomatis.`,
+      nomorHalaman: i + 1,
+    })
+  );
+
   return (
     <div className="p-4">
       <button
-        onClick={() => generateDaftarIsi(new Date().getFullYear())}
+        onClick={() =>
+          generateDaftarIsi(new Date().getFullYear(), contohEntries)
+        }
         className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
       >
         Generate PDF (Multi Page)
