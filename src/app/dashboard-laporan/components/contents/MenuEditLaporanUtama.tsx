@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, DragEvent } from "react";
-import { LampiranData, MenuOption } from "../../page";
 import {
   XMarkIcon,
   CheckIcon,
@@ -9,6 +8,7 @@ import {
   DocumentIcon,
 } from "@heroicons/react/24/outline";
 import { addFooter } from "@/app/_utils/add-footers";
+import { LampiranData, MenuOption } from "@/app/_types/types";
 
 interface EditLampiranUtamaProps {
   setActiveMenu: (menu: MenuOption) => void;
@@ -16,7 +16,7 @@ interface EditLampiranUtamaProps {
   onEditLampiranUtama: (updated: LampiranData) => void;
 }
 
-export default function EditLampiranUtama({
+export default function MenuEditLampiranUtama({
   setActiveMenu,
   lampiran,
   onEditLampiranUtama,
@@ -26,45 +26,45 @@ export default function EditLampiranUtama({
     lampiran.judulPembatasLampiran
   );
   const [footerText, setFooterText] = useState(lampiran.footerText);
-  const [fontSize, setFontSize] = useState(lampiran.fontSize);
-  const [footerX, setFooterX] = useState(lampiran.footerX);
-  const [footerY, setFooterY] = useState(lampiran.footerY);
-  const [footerWidth, setFooterWidth] = useState(lampiran.footerWidth);
+  const [footer, setFooter] = useState({
+    width: lampiran.footerWidth,
+    height: lampiran.footerHeight,
+    x: lampiran.footerX,
+    y: lampiran.footerY,
+    fontSize: lampiran.fontSize,
+  });
   const [newFile, setNewFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [previewURL, setPreviewURL] = useState<string>("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const fileBufferRef = useState<ArrayBuffer | null>(null)[0];
 
-  // Live preview dengan footer setiap ada perubahan input atau file baru
-  useEffect(() => {
+  const generatePreview = async () => {
     const file = newFile ?? lampiran.file;
+    if (!file) return;
+    const buffer = await file.arrayBuffer();
 
-    const updatePreview = async () => {
-      const arrayBuffer = await file.arrayBuffer();
-      const url = await addFooter(
-        footerWidth,
-        footerX,
-        footerY,
-        lampiran.footerHeight,
-        fontSize,
-        romawiLampiran,
-        footerText,
-        arrayBuffer
-      );
-      setPreviewURL(url);
-    };
+    setIsGenerating(true);
+    const url = await addFooter(
+      footer.width,
+      footer.x,
+      footer.y,
+      footer.height,
+      footer.fontSize,
+      romawiLampiran,
+      footerText,
+      buffer
+    );
 
-    updatePreview();
-  }, [
-    newFile,
-    footerWidth,
-    footerX,
-    footerY,
-    fontSize,
-    romawiLampiran,
-    footerText,
-    lampiran.file,
-    lampiran.footerHeight,
-  ]);
+    if (previewURL) URL.revokeObjectURL(previewURL);
+    setPreviewURL(url);
+    setIsGenerating(false);
+  };
+
+  useEffect(() => {
+    generatePreview();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newFile, romawiLampiran, footerText, footer]);
 
   const handleFileChange = (file: File | null) => {
     if (!file) return;
@@ -79,8 +79,7 @@ export default function EditLampiranUtama({
     e.preventDefault();
     e.stopPropagation();
     setDragOver(false);
-    const file = e.dataTransfer.files[0];
-    handleFileChange(file);
+    handleFileChange(e.dataTransfer.files[0] ?? null);
   };
 
   const handleSave = () => {
@@ -95,40 +94,18 @@ export default function EditLampiranUtama({
       romawiLampiran,
       judulPembatasLampiran: judulLampiran,
       footerText,
-      fontSize,
-      footerX,
-      footerY,
-      footerWidth,
+      footerWidth: footer.width,
+      footerHeight: footer.height,
+      footerX: footer.x,
+      footerY: footer.y,
+      fontSize: footer.fontSize,
     });
 
     setActiveMenu(MenuOption.LAMPIRAN_UTAMA);
   };
 
-  const handleRerender = () => {
-    // manual rerender, tetap panggil useEffect otomatis juga
-    if (!previewURL) return;
-    setPreviewURL("");
-    setTimeout(() => {
-      const file = newFile ?? lampiran.file;
-      file
-        .arrayBuffer()
-        .then((arrayBuffer) =>
-          addFooter(
-            footerWidth,
-            footerX,
-            footerY,
-            lampiran.footerHeight,
-            fontSize,
-            romawiLampiran,
-            footerText,
-            arrayBuffer
-          ).then((url) => setPreviewURL(url))
-        );
-    }, 50);
-  };
-
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 w-full max-w-6xl mx-auto space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">
@@ -144,90 +121,7 @@ export default function EditLampiranUtama({
 
       {/* Form */}
       <div className="bg-white p-6 rounded-xl shadow-md space-y-4">
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Romawi Lampiran
-          </label>
-          <input
-            type="text"
-            value={romawiLampiran}
-            onChange={(e) => setRomawiLampiran(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Judul Lampiran
-          </label>
-          <input
-            type="text"
-            value={judulLampiran}
-            onChange={(e) => setJudulLampiran(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Footer Text
-          </label>
-          <input
-            type="text"
-            value={footerText}
-            onChange={(e) => setFooterText(e.target.value)}
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div className="grid grid-cols-4 gap-4">
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Footer Width
-            </label>
-            <input
-              type="number"
-              value={footerWidth}
-              onChange={(e) => setFooterWidth(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Font Size
-            </label>
-            <input
-              type="number"
-              value={fontSize}
-              onChange={(e) => setFontSize(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Footer X
-            </label>
-            <input
-              type="number"
-              value={footerX}
-              onChange={(e) => setFooterX(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700 font-medium mb-1">
-              Footer Y
-            </label>
-            <input
-              type="number"
-              value={footerY}
-              onChange={(e) => setFooterY(Number(e.target.value))}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-        </div>
-
-        {/* Upload */}
+        {/* Upload File PDF */}
         <div>
           <label className="block text-gray-700 font-medium mb-2">
             Ganti File PDF
@@ -263,13 +157,122 @@ export default function EditLampiranUtama({
           </div>
         </div>
 
-        {/* Tombol Rerender + Batal + Simpan */}
+        {/* Romawi Lampiran */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-1">
+            Romawi Lampiran
+          </label>
+          <input
+            type="text"
+            value={romawiLampiran}
+            onChange={(e) => setRomawiLampiran(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Judul Lampiran */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-1">
+            Judul Lampiran
+          </label>
+          <input
+            type="text"
+            value={judulLampiran}
+            onChange={(e) => setJudulLampiran(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Footer Text */}
+        <div>
+          <label className="block text-gray-700 font-medium mb-1">
+            Footer Text
+          </label>
+          <input
+            type="text"
+            value={footerText}
+            onChange={(e) => setFooterText(e.target.value)}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* Footer Settings (satu baris) */}
+        <div className="flex flex-wrap gap-4">
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-gray-700 font-medium mb-1">
+              Lebar Footer
+            </label>
+            <input
+              type="number"
+              value={footer.width}
+              onChange={(e) =>
+                setFooter({ ...footer, width: Number(e.target.value) })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-gray-700 font-medium mb-1">
+              Tinggi Footer
+            </label>
+            <input
+              type="number"
+              value={footer.height}
+              onChange={(e) =>
+                setFooter({ ...footer, height: Number(e.target.value) })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-gray-700 font-medium mb-1">
+              Posisi X Footer
+            </label>
+            <input
+              type="number"
+              value={footer.x}
+              onChange={(e) =>
+                setFooter({ ...footer, x: Number(e.target.value) })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-gray-700 font-medium mb-1">
+              Posisi Y Footer
+            </label>
+            <input
+              type="number"
+              value={footer.y}
+              onChange={(e) =>
+                setFooter({ ...footer, y: Number(e.target.value) })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex-1 min-w-[120px]">
+            <label className="block text-gray-700 font-medium mb-1">
+              Ukuran Font Footer
+            </label>
+            <input
+              type="number"
+              value={footer.fontSize}
+              onChange={(e) =>
+                setFooter({ ...footer, fontSize: Number(e.target.value) })
+              }
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+
+        {/* Tombol */}
         <div className="flex justify-end gap-3 mt-4">
           <button
-            onClick={handleRerender}
+            onClick={generatePreview}
+            disabled={isGenerating}
             className="px-4 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition"
           >
-            Rerender
+            {isGenerating ? "Memproses..." : "Preview"}
           </button>
           <button
             onClick={() => setActiveMenu(MenuOption.LAMPIRAN_UTAMA)}

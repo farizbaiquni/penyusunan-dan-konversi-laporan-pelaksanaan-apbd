@@ -8,7 +8,7 @@ interface BatangTubuhProps {
   setBatangTubuh: (file: File | null) => void;
 }
 
-export default function BatangTubuh({
+export default function MenuBatangTubuh({
   batangTubuhFile,
   setBatangTubuh,
 }: BatangTubuhProps) {

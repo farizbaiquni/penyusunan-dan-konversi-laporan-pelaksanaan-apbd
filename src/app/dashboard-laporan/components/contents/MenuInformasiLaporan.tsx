@@ -19,7 +19,7 @@ interface InformasiLaporanProps {
   setNamaBupati: (nama: string) => void;
 }
 
-export default function InformasiLaporan({
+export default function MenuInformasiLaporan({
   tahun,
   jumlahLampiranUtama,
   jumlahLampiranPendukung,
@@ -68,7 +68,7 @@ export default function InformasiLaporan({
         </div>
 
         {/* BAGIAN EDITABLE */}
-        <section className="bg-white border-t-4 border-blue-500 rounded-xl p-5 shadow-sm mb-6">
+        <section className="bg-white border-t-4 border-blue-500 rounded-sm p-5 shadow-sm mb-6">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
             📝 Data yang Dapat Diedit
           </h3>
@@ -164,7 +164,7 @@ interface InfoCardProps {
 function InfoCard({ label, value, icon, muted, highlight }: InfoCardProps) {
   return (
     <div
-      className={`flex flex-col bg-white rounded-xl p-4 border shadow-sm hover:shadow-md transition ${
+      className={`flex flex-col bg-white rounded-sm p-4 border shadow-sm hover:shadow-md transition ${
         highlight ? "border-blue-300" : "border-gray-100"
       }`}
     >
@@ -186,7 +186,7 @@ function InfoCard({ label, value, icon, muted, highlight }: InfoCardProps) {
 /* 🔹 Kartu Status Upload */
 function StatusCard({ isUpload }: { isUpload: boolean }) {
   return (
-    <div className="flex flex-col bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition">
+    <div className="flex flex-col bg-white rounded-sm p-4 border border-gray-100 shadow-sm hover:shadow-md transition">
       <div className="flex items-center gap-2 mb-1">
         <span className="text-lg">📤</span>
         <span className="text-gray-600 text-sm font-medium">

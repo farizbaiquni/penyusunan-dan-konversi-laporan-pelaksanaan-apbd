@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { LampiranData, MenuOption } from "../../page";
+import { useState, useEffect, useCallback } from "react";
 import {
   TrashIcon,
   EyeIcon,
@@ -10,7 +9,11 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import OrderLampiranUtamaModal from "../../modals/OrderLampiranUtamaModal";
+import { LampiranData, MenuOption } from "@/app/_types/types";
 
+/* ============================================================
+   INTERFACE
+============================================================ */
 interface LampiranManagerProps {
   setActiveMenu: (menu: MenuOption) => void;
   lampirans: LampiranData[];
@@ -19,7 +22,10 @@ interface LampiranManagerProps {
   handleOnClickEditLampiran: (editedLampiran: LampiranData) => void;
 }
 
-export default function LampiranManager({
+/* ============================================================
+   KOMPONEN UTAMA
+============================================================ */
+export default function MenuLampiran({
   setActiveMenu,
   lampirans,
   onDeleteLampiran,
@@ -30,46 +36,55 @@ export default function LampiranManager({
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<LampiranData[]>([]);
 
+  // Sinkronisasi order lokal dengan props
   useEffect(() => {
     setLocalOrder([...lampirans]);
   }, [lampirans]);
 
-  const moveItem = (index: number, direction: "up" | "down") => {
+  // Fungsi untuk mengubah urutan lampiran
+  const moveItem = useCallback((index: number, direction: "up" | "down") => {
     setLocalOrder((prev) => {
       const updated = [...prev];
       const target = direction === "up" ? index - 1 : index + 1;
       if (target < 0 || target >= updated.length) return prev;
       [updated[index], updated[target]] = [updated[target], updated[index]];
-      updated.forEach((l, i) => (l.urutan = i + 1));
-      return updated;
+      return updated.map((l, i) => ({ ...l, urutan: i + 1 }));
     });
-  };
+  }, []);
 
-  const handlePreview = (file: File) => {
+  // Preview PDF
+  const handlePreview = useCallback((file: File) => {
     const url = URL.createObjectURL(file);
     setPreviewURL(url);
-  };
+  }, []);
 
-  const handleSaveOrder = () => {
+  // Simpan perubahan urutan lampiran
+  const handleSaveOrder = useCallback(() => {
     updateLampiranOrder(localOrder);
     setShowOrderModal(false);
-  };
+  }, [localOrder, updateLampiranOrder]);
 
-  const formatFileSize = (size: number) => {
-    if (size < 1024) return `${size} B`;
-    if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
-    return `${(size / 1024 / 1024).toFixed(1)} MB`;
-  };
+  // Format ukuran file
+  const formatFileSize = (size: number) =>
+    size < 1024
+      ? `${size} B`
+      : size < 1024 * 1024
+      ? `${(size / 1024).toFixed(1)} KB`
+      : `${(size / 1024 / 1024).toFixed(1)} MB`;
 
+  // Bersihkan URL preview saat unmount
   useEffect(() => {
     return () => {
       if (previewURL) URL.revokeObjectURL(previewURL);
     };
   }, [previewURL]);
 
+  /* ============================================================
+     RENDER
+  ============================================================ */
   return (
     <div className="p-6 bg-white rounded-2xl shadow-md max-w-5xl mx-auto">
-      {/* Header */}
+      {/* HEADER */}
       <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
         <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
           📎 Daftar Lampiran Utama
@@ -93,7 +108,7 @@ export default function LampiranManager({
         </div>
       </div>
 
-      {/* Tabel Daftar Lampiran */}
+      {/* TABEL LAMPIRAN */}
       {lampirans.length === 0 ? (
         <p className="text-gray-500 text-sm text-center py-6 border rounded-lg">
           Belum ada lampiran yang ditambahkan.
@@ -121,7 +136,12 @@ export default function LampiranManager({
                   } hover:bg-blue-50 transition`}
                 >
                   <td className="px-4 py-2 text-center">{i + 1}</td>
-                  <td className="px-4 py-2">{l.file.name}</td>
+                  <td
+                    className="px-4 py-2 truncate max-w-[180px]"
+                    title={l.file.name}
+                  >
+                    {l.file.name}
+                  </td>
                   <td className="px-4 py-2 text-center font-semibold text-blue-600">
                     {l.romawiLampiran}
                   </td>
@@ -132,6 +152,7 @@ export default function LampiranManager({
                   </td>
                   <td className="px-4 py-2 text-center">
                     <div className="flex justify-center gap-2">
+                      {/* Preview */}
                       <button
                         onClick={() => handlePreview(l.file)}
                         className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition font-medium"
@@ -139,6 +160,8 @@ export default function LampiranManager({
                         <EyeIcon className="w-4 h-4" />
                         <span>Preview</span>
                       </button>
+
+                      {/* Edit */}
                       <button
                         title="Edit Lampiran"
                         onClick={() => handleOnClickEditLampiran(l)}
@@ -147,6 +170,8 @@ export default function LampiranManager({
                         <Cog6ToothIcon className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
+
+                      {/* Hapus */}
                       <button
                         onClick={() => onDeleteLampiran(l.id)}
                         className="flex items-center gap-1 text-red-600 hover:text-red-700 transition font-medium"
@@ -163,7 +188,7 @@ export default function LampiranManager({
         </div>
       )}
 
-      {/* Modal Urutan */}
+      {/* MODAL: Urutan Lampiran */}
       {showOrderModal && (
         <OrderLampiranUtamaModal
           lampiran={localOrder}
@@ -173,7 +198,7 @@ export default function LampiranManager({
         />
       )}
 
-      {/* Modal Preview PDF */}
+      {/* MODAL: Preview PDF */}
       {previewURL && (
         <PreviewModal pdfURL={previewURL} onClose={() => setPreviewURL(null)} />
       )}
@@ -181,7 +206,9 @@ export default function LampiranManager({
   );
 }
 
-/* ========= MODAL: Preview PDF ========= */
+/* ============================================================
+   KOMPONEN MODAL PREVIEW PDF
+============================================================ */
 function PreviewModal({
   pdfURL,
   onClose,
@@ -194,9 +221,10 @@ function PreviewModal({
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[90vh] relative">
         <button
           onClick={onClose}
-          className="absolute top-3 right-[-20px] cursor-pointer p-1 hover:bg-gray-300 transition rounded-full bg-white"
+          className="absolute -top-4 -right-4 bg-white p-2 rounded-full shadow hover:bg-gray-200 transition"
+          title="Tutup"
         >
-          <XMarkIcon className="w-6 h-6" />
+          <XMarkIcon className="w-6 h-6 text-gray-700" />
         </button>
         <iframe
           src={pdfURL}

@@ -1,46 +1,25 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import { LampiranData } from "../../page";
+import { useState } from "react";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { DaftarIsiLampiran } from "@/app/testing-daftar-isi/page";
 import { generateCover } from "@/app/_utils/generate-cover";
 import { generateDaftarIsi } from "@/app/_utils/generate-daftar-isi";
 import { addFooterToPages } from "@/app/_utils/add-footers";
+import { LampiranData } from "@/app/_types/types";
 
-interface PreviewProps {
+interface GenerateProps {
   batangTubuh: File | null;
   lampirans: LampiranData[];
 }
 
-async function generateEntriesFromLampiran(
-  lampirans: LampiranData[]
-): Promise<{ romawi: string; judul: string; nomorHalaman: number }[]> {
-  const entries: DaftarIsiLampiran[] = [];
-  let currentPage = 1;
-
-  for (const lampiran of lampirans) {
-    const lampiranBytes = await lampiran.file.arrayBuffer();
-    const lampiranDoc = await PDFDocument.load(lampiranBytes);
-    const jumlahHalaman = lampiranDoc.getPageCount();
-
-    entries.push({
-      romawi: lampiran.romawiLampiran,
-      judul: lampiran.footerText || lampiran.file.name,
-      nomorHalaman: currentPage,
-    });
-
-    currentPage += jumlahHalaman;
-  }
-
-  return entries;
-}
-
-export default function Preview({ batangTubuh, lampirans }: PreviewProps) {
+export default function MenuGenerate({
+  batangTubuh,
+  lampirans,
+}: GenerateProps) {
   const [isGenerating, setIsGenerating] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
-  async function generateFinalPDF() {
+  async function handleDownload() {
     setIsGenerating(true);
 
     const width = 21 * 28.35;
@@ -49,23 +28,36 @@ export default function Preview({ batangTubuh, lampirans }: PreviewProps) {
     const fontBold = await finalPdf.embedFont(StandardFonts.TimesRomanBold);
     const fontRegular = await finalPdf.embedFont(StandardFonts.TimesRoman);
 
-    // ✅ 1️⃣ Cover selalu dibuat
     await generateCover(2025, finalPdf);
 
-    // ✅ 2️⃣ Tambahkan batang tubuh jika ada
     if (batangTubuh) {
       const batangBytes = await batangTubuh.arrayBuffer();
       const batangDoc = await PDFDocument.load(batangBytes);
-      const batangPages = await finalPdf.copyPages(
+      const pages = await finalPdf.copyPages(
         batangDoc,
         batangDoc.getPageIndices()
       );
-      batangPages.forEach((p) => finalPdf.addPage(p));
+      pages.forEach((p) => finalPdf.addPage(p));
     }
 
-    // ✅ 3️⃣ Tambahkan daftar isi & lampiran jika ada
     if (lampirans.length > 0) {
-      const entries = await generateEntriesFromLampiran(lampirans);
+      const entries: DaftarIsiLampiran[] = [];
+      let currentPage = 1;
+
+      for (const lampiran of lampirans) {
+        const lampiranBytes = await lampiran.file.arrayBuffer();
+        const lampiranDoc = await PDFDocument.load(lampiranBytes);
+        const jumlahHalaman = lampiranDoc.getPageCount();
+
+        entries.push({
+          romawi: lampiran.romawiLampiran,
+          judul: lampiran.footerText || lampiran.file.name,
+          nomorHalaman: currentPage,
+        });
+
+        currentPage += jumlahHalaman;
+      }
+
       generateDaftarIsi(2025, entries, finalPdf);
 
       let currentPageNumber = 1;
@@ -74,12 +66,12 @@ export default function Preview({ batangTubuh, lampirans }: PreviewProps) {
         const { width: pageWidth } = pembatasPage.getSize();
         const centerX = pageWidth / 2;
 
-        function drawCenteredText(
+        const drawCenteredText = (
           text: string,
           y: number,
           size = 16,
           bold = false
-        ) {
+        ) => {
           const textWidth = (bold ? fontBold : fontRegular).widthOfTextAtSize(
             text,
             size
@@ -91,7 +83,7 @@ export default function Preview({ batangTubuh, lampirans }: PreviewProps) {
             font: bold ? fontBold : fontRegular,
             color: rgb(0, 0, 0),
           });
-        }
+        };
 
         let currentY = height - 90;
         drawCenteredText(`LAMPIRAN ${lampiran.romawiLampiran}`, currentY, 15);
@@ -136,43 +128,30 @@ export default function Preview({ batangTubuh, lampirans }: PreviewProps) {
       }
     }
 
-    // ✅ 4️⃣ Buat blob URL untuk preview
     const pdfBytes = await finalPdf.save();
     const blob = new Blob([new Uint8Array(pdfBytes)], {
       type: "application/pdf",
     });
     const url = URL.createObjectURL(blob);
-    setPreviewUrl(url);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "hasil_gabungan.pdf";
+    link.click();
+    URL.revokeObjectURL(url);
+
     setIsGenerating(false);
   }
 
-  // ✅ 5️⃣ Auto preview meski tanpa batang tubuh/lampiran
-  useEffect(() => {
-    generateFinalPDF();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [batangTubuh, lampirans]);
-
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="text-2xl font-semibold text-blue-700">
-        📄 Preview Dokumen
-      </h1>
-
+    <div className="p-6">
       <button
-        onClick={generateFinalPDF}
+        onClick={handleDownload}
         disabled={isGenerating}
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        className="bg-blue-800 text-white px-5 py-2 rounded hover:bg-blue-900"
       >
-        {isGenerating ? "Memproses..." : "Perbarui Preview"}
+        {isGenerating ? "Mengunduh..." : "💾 Download PDF Final"}
       </button>
-
-      {previewUrl && (
-        <iframe
-          src={previewUrl}
-          className="w-full h-[800px] border mt-4 rounded-md shadow-sm"
-          title="PDF Preview"
-        />
-      )}
     </div>
   );
 }
