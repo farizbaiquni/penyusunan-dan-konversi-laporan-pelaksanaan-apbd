@@ -3,10 +3,42 @@ export enum MenuOption {
   BATANG_TUBUH = "Batang Tubuh",
   LAMPIRAN_UTAMA = "Lampiran Utama",
   TAMBAH_LAMPIRAN_UTAMA = "Tambah Lampiran Utama",
+  TAMBAH_LAMPIRAN_UTAMA_CALK = "Tambah Lampiran Utama CALK",
   EDIT_LAMPIRAN_UTAMA = "Edit Lampiran Utama",
   LAMPIRAN_PENDUKUNG = "Lampiran Pendukung",
-  PREVIEW = "preview",
-  GENERATE = "generate",
+  PREVIEW = "Preview",
+  GENERATE = "Generate",
+}
+
+export interface DaftarIsiLampiran {
+  id: string;
+  romawi: string;
+  judul: string;
+  nomorHalaman: number;
+  isCALK: boolean;
+  babs?: BabCalk[];
+}
+
+export interface BabCalk {
+  id: string;
+  bab: string;
+  judul: string;
+  halamanMulai: number;
+  subbabs?: SubbabCalk[];
+}
+
+export interface SubbabCalk {
+  id: string;
+  subbab: string;
+  judul: string;
+  halamanMulai: number;
+}
+
+export enum JenisLaporan {
+  RAPERDA = "Raperda",
+  RAPERBUP = "Raperbup",
+  PERDA = "Perda",
+  PERBUP = "Perbup",
 }
 
 export interface LampiranData {
@@ -22,4 +54,19 @@ export interface LampiranData {
   fontSize: number;
   footerHeight: number;
   jumlahHalaman: number;
+  isCALK: boolean;
+  babs?: BabCalk[];
+}
+
+export interface DaftarIsiBabLampiranCALK {
+  id: number;
+  bab: string;
+  mulaiDariLembarKe: number;
+}
+
+export interface DaftarIsiSubBabLampiranCALK {
+  id: number;
+  urutan: number;
+  subBab: string;
+  daftarIsiBabLampiranCALK: DaftarIsiBabLampiranCALK[];
 }

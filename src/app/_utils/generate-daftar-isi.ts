@@ -1,29 +1,26 @@
 import { PDFDocument, PDFFont, PDFPage, rgb, StandardFonts } from "pdf-lib";
-import { DaftarIsiLampiran } from "../testing-daftar-isi/page";
+import { DaftarIsiLampiran, BabCalk } from "../_types/types";
 
-// DAFTAR ISI
 export async function generateDaftarIsi(
   tahun: number,
   entries: DaftarIsiLampiran[],
   pdfDoc: PDFDocument
 ) {
-  const width = 21 * 28.35;
+  const width = 21 * 28.35; // A4 landscape (pt)
   const height = 33 * 28.35;
-
   const marginLeft = 70;
   const marginRight = 70;
   const bottomMargin = 80;
 
   let page = pdfDoc.addPage([width, height]);
-
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-  const { width: pageWidth } = page.getSize();
+  const pageWidth = page.getWidth();
   const usableWidth = pageWidth - marginLeft - marginRight;
   const centerX = pageWidth / 2;
 
-  // --- Utility: wrap text otomatis ---
+  /* --- Utility: membungkus teks panjang --- */
   function wrapText(
     text: string,
     font: PDFFont,
@@ -32,99 +29,76 @@ export async function generateDaftarIsi(
   ) {
     const words = text.split(" ");
     const lines: string[] = [];
-    let currentLine = "";
+    let current = "";
 
     for (const word of words) {
-      const testLine = currentLine ? currentLine + " " + word : word;
-      const textWidth = font.widthOfTextAtSize(testLine, fontSize);
-      if (textWidth > maxWidth) {
-        if (currentLine) lines.push(currentLine);
-        currentLine = word;
+      const test = current ? current + " " + word : word;
+      const w = font.widthOfTextAtSize(test, fontSize);
+      if (w > maxWidth) {
+        if (current) lines.push(current);
+        current = word;
       } else {
-        currentLine = testLine;
+        current = test;
       }
     }
-    if (currentLine) lines.push(currentLine);
+    if (current) lines.push(current);
     return lines;
   }
 
-  // --- Draw header untuk tiap halaman ---
-  function drawPageHeader(page: PDFPage, y: number) {
-    const headerY = y;
-    page.drawText("URAIAN", {
-      x: marginLeft,
-      y: headerY,
-      size: 12,
-      font: fontBold,
-      color: rgb(0, 0, 0),
-    });
-    const halamanHeader = "HALAMAN";
-    const halamanHeaderWidth = fontBold.widthOfTextAtSize(halamanHeader, 12);
-    page.drawText(halamanHeader, {
-      x: pageWidth - marginRight - halamanHeaderWidth,
-      y: headerY,
-      size: 12,
-      font: fontBold,
-      color: rgb(0, 0, 0),
-    });
-
-    // Garis horizontal di bawah header
-    const columnLineY = headerY - 8;
-    page.drawLine({
-      start: { x: marginLeft, y: columnLineY },
-      end: { x: pageWidth - marginRight, y: columnLineY },
-      thickness: 1,
-      color: rgb(0, 0, 0),
-    });
-    return columnLineY - 20;
-  }
-
-  // --- Draw satu entri ---
+  /* --- Fungsi menggambar 1 entri utama (Lampiran) --- */
   function drawEntry(page: PDFPage, entry: DaftarIsiLampiran, startY: number) {
-    const size = 11;
-    const font = fontRegular;
-    const lineHeight = size + 4;
+    const fontSize = 11;
+    const lineHeight = fontSize + 4;
     const rightColumnWidth = 40;
     const maxTextWidth = usableWidth - rightColumnWidth;
 
-    // Lampiran dan Romawi
-    page.drawText(`LAMPIRAN ${entry.romawi} PERATURAN BUPATI KENDAL`, {
-      x: marginLeft,
-      y: startY,
-      size,
-      font: fontBold,
-      color: rgb(0, 0, 0),
-    });
-
-    const uraianStartY = startY - lineHeight;
-    const lines = wrapText(entry.judul, font, size, maxTextWidth);
+    const text = `LAMPIRAN ${entry.romawi} PERATURAN DAERAH KABUPATEN KENDAL`;
+    const lines = wrapText(text, fontBold, fontSize, maxTextWidth);
+    const uraianY = startY - lineHeight;
 
     for (let i = 0; i < lines.length; i++) {
-      const y = uraianStartY - i * lineHeight;
+      const y = uraianY - i * lineHeight;
       page.drawText(lines[i], {
         x: marginLeft,
         y,
-        size,
-        font,
+        size: fontSize,
+        font: fontBold,
         color: rgb(0, 0, 0),
       });
     }
 
-    const lastLineY = uraianStartY - (lines.length - 1) * lineHeight;
+    const titleY = uraianY - lines.length * lineHeight;
+    const titleLines = wrapText(
+      entry.judul,
+      fontRegular,
+      fontSize,
+      maxTextWidth
+    );
 
-    const halamanWidth = font.widthOfTextAtSize(
+    for (let i = 0; i < titleLines.length; i++) {
+      const y = titleY - i * lineHeight;
+      page.drawText(titleLines[i], {
+        x: marginLeft,
+        y,
+        size: fontSize,
+        font: fontRegular,
+        color: rgb(0, 0, 0),
+      });
+    }
+
+    const lastLineY = titleY - (titleLines.length - 1) * lineHeight;
+    const pageNumWidth = fontRegular.widthOfTextAtSize(
       entry.nomorHalaman.toString(),
-      size
+      fontSize
     );
     page.drawText(entry.nomorHalaman.toString(), {
-      x: pageWidth - marginRight - halamanWidth,
+      x: pageWidth - marginRight - pageNumWidth,
       y: lastLineY,
-      size,
-      font,
+      size: fontSize,
+      font: fontRegular,
       color: rgb(0, 0, 0),
     });
 
-    // Garis bawah entri
     const lineY = lastLineY - 8;
     page.drawLine({
       start: { x: marginLeft, y: lineY },
@@ -133,31 +107,104 @@ export async function generateDaftarIsi(
       color: rgb(0.3, 0.3, 0.3),
     });
 
-    return lineY - 15;
+    return lineY - 12;
   }
 
-  // --- Header Halaman Pertama ---
-  let currentY = height - 100;
-  const drawCentered = (text: string, y: number, font: PDFFont, size = 12) => {
+  /* --- Fungsi untuk menggambar isi CALK di bawah Lampiran --- */
+  function drawCALKSection(
+    page: PDFPage,
+    babs: BabCalk[],
+    startY: number
+  ): number {
+    let currentY = startY;
+    const fontSize = 11;
+    const babIndent = 10; // tab untuk BAB
+    const subIndent = 30; // tab untuk Subbab
+
+    function drawCalkEntry(
+      text: string,
+      pageNum: number,
+      font: PDFFont,
+      indent: number
+    ) {
+      const lineHeight = fontSize + 2;
+      const rightColumnWidth = 40;
+      const maxTextWidth = usableWidth - rightColumnWidth - indent;
+      const lines = wrapText(text, font, fontSize, maxTextWidth);
+
+      for (let i = 0; i < lines.length; i++) {
+        const y = currentY - lineHeight * (i + 1);
+        page.drawText(lines[i], {
+          x: marginLeft + indent,
+          y,
+          size: fontSize,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      }
+
+      const lastY = currentY - lineHeight * lines.length;
+      const pageWidthNum = font.widthOfTextAtSize(pageNum.toString(), fontSize);
+      page.drawText(pageNum.toString(), {
+        x: pageWidth - marginRight - pageWidthNum,
+        y: lastY,
+        size: fontSize,
+        font,
+        color: rgb(0, 0, 0),
+      });
+
+      page.drawLine({
+        start: { x: marginLeft + indent, y: lastY - 4 },
+        end: { x: pageWidth - marginRight, y: lastY - 4 },
+        thickness: 0.5,
+        color: rgb(0.3, 0.3, 0.3),
+      });
+
+      currentY = lastY - 10;
+    }
+
+    for (const bab of babs) {
+      if (currentY < bottomMargin) {
+        page = pdfDoc.addPage([width, height]);
+        currentY = height - 100;
+      }
+
+      const babText = `BAB ${bab.bab}. ${bab.judul}`;
+      drawCalkEntry(babText, bab.halamanMulai, fontBold, babIndent);
+
+      if (bab.subbabs) {
+        for (const sub of bab.subbabs) {
+          if (currentY < bottomMargin) {
+            page = pdfDoc.addPage([width, height]);
+            currentY = height - 100;
+          }
+
+          const subText = `${bab.bab}.${sub.subbab} ${sub.judul}`;
+          drawCalkEntry(subText, sub.halamanMulai, fontRegular, subIndent);
+        }
+      }
+    }
+
+    return currentY;
+  }
+
+  /* --- Header halaman pertama --- */
+  function drawCentered(text: string, y: number, font: PDFFont, size = 12) {
     const w = font.widthOfTextAtSize(text, size);
     const x = centerX - w / 2;
-    page.drawText(text, { x, y, font, size });
-    return y - size;
-  };
+    page.drawText(text, { x, y, font, size, color: rgb(0, 0, 0) });
+    return y - size - 5;
+  }
 
+  let currentY = height - 100;
   currentY = drawCentered("PENUNJUK HALAMAN", currentY, fontBold);
   currentY = drawCentered(
     "LAMPIRAN RANCANGAN PERATURAN DAERAH KABUPATEN KENDAL",
-    currentY - 8,
+    currentY,
     fontRegular
   );
-  currentY = drawCentered(
-    `NOMOR ..... TAHUN ${tahun}`,
-    currentY - 8,
-    fontRegular
-  );
+  currentY = drawCentered(`NOMOR ..... TAHUN ${tahun}`, currentY, fontRegular);
 
-  // Garis bawah header utama
   const headerLineY = currentY - 8;
   page.drawLine({
     start: { x: marginLeft, y: headerLineY },
@@ -166,17 +213,20 @@ export async function generateDaftarIsi(
     color: rgb(0, 0, 0),
   });
 
-  // Header kolom pertama
-  currentY = drawPageHeader(page, headerLineY - 20);
+  currentY = headerLineY - 25;
 
-  // --- Loop entri dengan auto new page ---
-  for (const e of entries) {
+  /* --- Loop semua entries (lampiran) --- */
+  for (const entry of entries) {
     if (currentY < bottomMargin) {
       page = pdfDoc.addPage([width, height]);
       currentY = height - 100;
-      currentY = drawPageHeader(page, currentY);
     }
 
-    currentY = drawEntry(page, e, currentY);
+    currentY = drawEntry(page, entry, currentY);
+
+    // Jika lampiran ini adalah CALK
+    if (entry.isCALK && entry.babs && entry.babs.length > 0) {
+      currentY = drawCALKSection(page, entry.babs, currentY);
+    }
   }
 }

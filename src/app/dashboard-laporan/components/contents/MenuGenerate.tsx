@@ -2,11 +2,10 @@
 
 import { useState } from "react";
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
-import { DaftarIsiLampiran } from "@/app/testing-daftar-isi/page";
-import { generateCover } from "@/app/_utils/generate-cover";
+import { generateCoverRaperda } from "@/app/_utils/generate-cover";
 import { generateDaftarIsi } from "@/app/_utils/generate-daftar-isi";
 import { addFooterToPages } from "@/app/_utils/add-footers";
-import { LampiranData } from "@/app/_types/types";
+import { DaftarIsiLampiran, LampiranData } from "@/app/_types/types";
 
 interface GenerateProps {
   batangTubuh: File | null;
@@ -28,7 +27,7 @@ export default function MenuGenerate({
     const fontBold = await finalPdf.embedFont(StandardFonts.TimesRomanBold);
     const fontRegular = await finalPdf.embedFont(StandardFonts.TimesRoman);
 
-    await generateCover(2025, finalPdf);
+    await generateCoverRaperda(2025, finalPdf);
 
     if (batangTubuh) {
       const batangBytes = await batangTubuh.arrayBuffer();

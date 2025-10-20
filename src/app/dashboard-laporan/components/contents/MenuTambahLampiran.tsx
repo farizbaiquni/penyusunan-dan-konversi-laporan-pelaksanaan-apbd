@@ -4,7 +4,8 @@ import { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
 import { addFooter } from "@/app/_utils/add-footers";
 import UploadLampiran from "../UploadLampiran";
-import { LampiranData, MenuOption } from "@/app/_types/types";
+import { BabCalk, LampiranData, MenuOption } from "@/app/_types/types";
+import CalkStructureModal from "../../modals/LampiranCALKModal";
 
 interface TambahLampiranProps {
   setActiveMenu: (menu: MenuOption) => void;
@@ -18,6 +19,9 @@ export default function MenuTambahLampiran({
   const [romawiLampiran, setRomawiLampiran] = useState("");
   const [judulPembatasLampiran, setJudulPembatasLampiran] = useState("");
   const [footerText, setFooterText] = useState("");
+  const [isCALK, setIsCALK] = useState(false);
+  const [babCALK, setBabCALK] = useState<BabCalk[]>([]);
+  const [openCALKModal, setOpenCALKModal] = useState(false);
   const [footer, setFooter] = useState({
     width: 91,
     x: 0,
@@ -31,6 +35,10 @@ export default function MenuTambahLampiran({
   const [isGenerating, setIsGenerating] = useState(false);
 
   const fileDataRef = useRef<ArrayBuffer | null>(null);
+
+  const onAddLampiranUtamaCALK = (data: BabCalk[]) => {
+    setBabCALK(data);
+  };
 
   // Generate PDF preview dengan footer
   const handleAddFooter = async (existingPdfBytes: ArrayBuffer) => {
@@ -96,6 +104,8 @@ export default function MenuTambahLampiran({
         fontSize: footer.fontSize,
         footerHeight: footer.height,
         jumlahHalaman,
+        isCALK: isCALK,
+        babs: babCALK,
       });
 
       alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
@@ -134,6 +144,18 @@ export default function MenuTambahLampiran({
           <div className="flex flex-col mt-5">
             <fieldset className="border p-5 border-blue-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
               <legend className="px-2 font-semibold">INFORMASI LAMPIRAN</legend>
+
+              <div className="col-span-5">
+                <label className="font-medium mb-1 block">
+                  <input
+                    type="checkbox"
+                    checked={isCALK}
+                    onChange={() => setIsCALK(!isCALK)}
+                    className="mr-2"
+                  />
+                  Apakah Lampiran CALK
+                </label>
+              </div>
 
               {/* Romawi Lampiran */}
               <div className="col-span-5">
@@ -217,6 +239,13 @@ export default function MenuTambahLampiran({
               >
                 Simpan Lampiran
               </button>
+
+              <button
+                onClick={() => setOpenCALKModal(true)}
+                className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-md w-full sm:w-auto"
+              >
+                Buka CALK
+              </button>
             </div>
           </div>
         )}
@@ -227,6 +256,14 @@ export default function MenuTambahLampiran({
         <div className="w-full h-[600px] shadow-lg rounded-xl overflow-hidden border border-gray-300">
           <iframe src={previewUrl} className="w-full h-full" />
         </div>
+      )}
+
+      {openCALKModal && (
+        <CalkStructureModal
+          onClose={() => setOpenCALKModal(false)}
+          initialData={babCALK}
+          onAddLampiranUtamaCALK={onAddLampiranUtamaCALK}
+        />
       )}
     </div>
   );

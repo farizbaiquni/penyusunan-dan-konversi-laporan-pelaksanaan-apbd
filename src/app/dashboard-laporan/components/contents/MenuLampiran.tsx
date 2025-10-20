@@ -91,6 +91,14 @@ export default function MenuLampiran({
         </h2>
         <div className="flex gap-2">
           <button
+            onClick={() => setActiveMenu(MenuOption.TAMBAH_LAMPIRAN_UTAMA_CALK)}
+            className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition"
+          >
+            <PlusCircleIcon className="w-5 h-5" />
+            Tambah Lampiran CALK
+          </button>
+
+          <button
             onClick={() => setActiveMenu(MenuOption.TAMBAH_LAMPIRAN_UTAMA)}
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition"
           >

@@ -12,7 +12,13 @@ import MenuPreview from "./components/contents/MenuPreview";
 import MenuGenerate from "./components/contents/MenuGenerate";
 import MenuTambahLampiran from "./components/contents/MenuTambahLampiran";
 import MenuEditLampiranUtama from "./components/contents/MenuEditLaporanUtama";
-import { LampiranData, MenuOption } from "../_types/types";
+import {
+  BabCalk,
+  JenisLaporan,
+  LampiranData,
+  MenuOption,
+} from "../_types/types";
+import MenuTambahLampiranUtamaCALK from "./components/contents/MenuTambahLampiranCALK";
 
 interface SidebarLink {
   label: MenuOption;
@@ -113,10 +119,12 @@ Sidebar.displayName = "Sidebar";
 
 // === KOMPONEN UTAMA ===
 export default function Home() {
+  const [jenisLaporan, setJenisLaporan] = useState<JenisLaporan>(
+    JenisLaporan.PERDA
+  );
   const [activeMenu, setActiveMenu] = useState<MenuOption>(
     MenuOption.INFORMASI_LAPORAN
   );
-
   const [batangTubuhFile, setBatangTubuhFile] = useState<File | null>(null);
   const [isUploadBatangTubuh, setIsUploadBatangTubuh] = useState(false);
 
@@ -133,6 +141,8 @@ export default function Home() {
     deleteLampiran,
     reorderLampiran,
   } = useLampiranManager();
+
+  const [lampiranUtamaCALK, setLampiranUtamaCALK] = useState<BabCalk[]>([]);
 
   const jumlahLampiranUtama = lampirans.length;
   const jumlahLampiranPendukung = 0;
@@ -163,6 +173,10 @@ export default function Home() {
     ],
     [jumlahLampiranUtama, jumlahLampiranPendukung]
   );
+
+  const onAddLampiranUtamaCALK = (data: BabCalk[]) => {
+    setLampiranUtamaCALK(data);
+  };
 
   const getMenuComponent = () => {
     switch (activeMenu) {
@@ -208,6 +222,15 @@ export default function Home() {
           <MenuTambahLampiran
             setActiveMenu={setActiveMenu}
             onAddLampiran={addLampiran}
+          />
+        );
+
+      case MenuOption.TAMBAH_LAMPIRAN_UTAMA_CALK:
+        return (
+          <MenuTambahLampiranUtamaCALK
+            setActiveMenu={setActiveMenu}
+            initialData={lampiranUtamaCALK}
+            onAddLampiranUtamaCALK={onAddLampiranUtamaCALK}
           />
         );
 

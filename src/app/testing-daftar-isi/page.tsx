@@ -1,12 +1,7 @@
 "use client";
 
 import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from "pdf-lib";
-
-export interface DaftarIsiLampiran {
-  romawi: string;
-  judul: string;
-  nomorHalaman: number;
-}
+import { DaftarIsiLampiran } from "../_types/types";
 
 export default function GeneratedDaftarIsi() {
   async function generateDaftarIsi(
