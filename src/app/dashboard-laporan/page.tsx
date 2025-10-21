@@ -18,7 +18,6 @@ import {
   LampiranData,
   MenuOption,
 } from "../_types/types";
-import MenuTambahLampiranUtamaCALK from "./components/contents/MenuTambahLampiranCALK";
 
 interface SidebarLink {
   label: MenuOption;
@@ -222,15 +221,6 @@ export default function Home() {
           <MenuTambahLampiran
             setActiveMenu={setActiveMenu}
             onAddLampiran={addLampiran}
-          />
-        );
-
-      case MenuOption.TAMBAH_LAMPIRAN_UTAMA_CALK:
-        return (
-          <MenuTambahLampiranUtamaCALK
-            setActiveMenu={setActiveMenu}
-            initialData={lampiranUtamaCALK}
-            onAddLampiranUtamaCALK={onAddLampiranUtamaCALK}
           />
         );
 

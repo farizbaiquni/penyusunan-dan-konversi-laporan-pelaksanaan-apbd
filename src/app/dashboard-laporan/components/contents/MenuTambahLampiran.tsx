@@ -145,7 +145,7 @@ export default function MenuTambahLampiran({
             <fieldset className="border p-5 border-blue-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
               <legend className="px-2 font-semibold">INFORMASI LAMPIRAN</legend>
 
-              <div className="col-span-5">
+              <div className="col-span-5 flex items-center justify-between px-2">
                 <label className="font-medium mb-1 block">
                   <input
                     type="checkbox"
@@ -153,8 +153,17 @@ export default function MenuTambahLampiran({
                     onChange={() => setIsCALK(!isCALK)}
                     className="mr-2"
                   />
-                  Apakah Lampiran CALK
+                  Apakah lampiran CALK
                 </label>
+                <button
+                  disabled={!isCALK}
+                  onClick={() => setOpenCALKModal(true)}
+                  className={`${
+                    isCALK ? "bg-blue-700 hover:bg-blue-800" : "bg-gray-400"
+                  } text-white px-2 py-1 rounded-md w-full sm:w-auto`}
+                >
+                  Atur Halaman CALK
+                </button>
               </div>
 
               {/* Romawi Lampiran */}
@@ -238,13 +247,6 @@ export default function MenuTambahLampiran({
                 className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-md w-full sm:w-auto"
               >
                 Simpan Lampiran
-              </button>
-
-              <button
-                onClick={() => setOpenCALKModal(true)}
-                className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-md w-full sm:w-auto"
-              >
-                Buka CALK
               </button>
             </div>
           </div>

@@ -2,15 +2,8 @@
 "use client";
 
 import { useState } from "react";
-import {
-  PlusIcon,
-  TrashIcon,
-  ArrowDownTrayIcon,
-  XMarkIcon,
-} from "@heroicons/react/24/outline";
-import { PDFDocument } from "pdf-lib";
+import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { BabCalk, SubbabCalk } from "@/app/_types/types";
-import { generateDaftarIsiCALK } from "@/app/_utils/generate-daftar-isi-calk";
 
 interface CalkStructureModalProps {
   onClose: () => void;
@@ -25,7 +18,6 @@ export default function CalkStructureModal({
   onAddLampiranUtamaCALK,
 }: CalkStructureModalProps) {
   const [babs, setBabs] = useState<BabCalk[]>(initialData);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   /* 🔢 Konversi angka ke romawi */
   function romanize(num: number): string {
@@ -164,89 +156,48 @@ export default function CalkStructureModal({
     onClose();
   };
 
-  /* 📥 Download Daftar Isi */
-  const handleDownload = async () => {
-    setIsDownloading(true);
-    try {
-      const pdfDoc = await PDFDocument.create();
-      await generateDaftarIsiCALK(new Date().getFullYear(), babs, pdfDoc);
-      const pdfBytes = await pdfDoc.save();
-
-      const blob = new Blob([new Uint8Array(pdfBytes)], {
-        type: "application/pdf",
-      });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `DaftarIsiCALK_${new Date().getFullYear()}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error("Gagal membuat daftar isi:", err);
-      alert("Terjadi kesalahan saat membuat PDF.");
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white rounded-xl shadow-lg w-full max-w-5xl max-h-[85vh] overflow-y-auto p-6 relative">
+      <div className="bg-white rounded-sm shadow-xl w-full max-w-5xl max-h-[75vh] overflow-y-auto p-5 relative">
         {/* 🔹 Header Modal */}
-        <div className="flex justify-between items-center mb-5 border-b pb-3">
-          <h2 className="text-xl font-bold text-blue-800">
-            Struktur CALK (Catatan atas Laporan Keuangan)
+        <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Struktur Lampiran Utama CALK
           </h2>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-red-600 transition"
+            className="text-gray-400 hover:text-red-500 transition"
           >
-            <XMarkIcon className="w-6 h-6" />
-          </button>
-        </div>
-
-        {/* 🔹 Tombol Download */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={handleDownload}
-            disabled={isDownloading}
-            className={`flex items-center gap-2 px-4 py-2 rounded-md text-white ${
-              isDownloading
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-indigo-600 hover:bg-indigo-700"
-            }`}
-          >
-            <ArrowDownTrayIcon className="w-5 h-5" />
-            {isDownloading ? "Membuat PDF..." : "Download Daftar Isi"}
+            <XMarkIcon className="w-5 h-5" />
           </button>
         </div>
 
         {/* 🔹 Isi Modal */}
-        <div className="space-y-5">
+        <div className="space-y-4">
           {babs.map((bab, i) => (
             <div
               key={bab.id}
-              className="border border-gray-300 rounded-lg p-5 bg-gray-50"
+              className="border border-gray-200 rounded-lg p-4 bg-gray-50"
             >
               <div className="flex justify-between items-center mb-2">
-                <h3 className="font-semibold text-gray-700 text-lg">
+                <h3 className="font-medium text-gray-700">
                   BAB {bab.bab || romanize(i + 1)}
                 </h3>
                 <button
                   onClick={() => deleteBab(i)}
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-400 hover:text-red-600"
                 >
-                  <TrashIcon className="w-5 h-5" />
+                  <TrashIcon className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="grid sm:grid-cols-3 gap-3 mb-3">
+              <div className="grid sm:grid-cols-3 gap-2 mb-2">
                 <input
                   type="text"
                   placeholder="Judul Bab"
                   value={bab.judul}
                   onChange={(e) => updateBabField(i, "judul", e.target.value)}
-                  className="col-span-2 border rounded-md px-3 py-2"
+                  className="col-span-2 border rounded-md px-2 py-1 text-sm"
                 />
                 <input
                   type="number"
@@ -256,17 +207,17 @@ export default function CalkStructureModal({
                   onChange={(e) =>
                     updateBabField(i, "halamanMulai", Number(e.target.value))
                   }
-                  className="border rounded-md px-3 py-2 w-full"
+                  className="border rounded-md px-2 py-1 text-sm w-full"
                 />
               </div>
 
-              <div className="ml-4 space-y-2">
+              <div className="ml-4 space-y-1">
                 {bab.subbabs?.map((sub, j) => (
                   <div
                     key={sub.id}
-                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-md px-3 py-2"
+                    className="flex items-center gap-2 bg-white border border-gray-200 rounded-md px-2 py-1 text-sm"
                   >
-                    <span className="font-semibold text-gray-600 w-6">
+                    <span className="font-medium text-gray-600 w-6">
                       {bab.bab}.{sub.subbab}
                     </span>
                     <input
@@ -276,7 +227,7 @@ export default function CalkStructureModal({
                       onChange={(e) =>
                         updateSubbabField(i, j, "judul", e.target.value)
                       }
-                      className="flex-1 border rounded-md px-2 py-1"
+                      className="flex-1 border rounded-md px-1 py-0.5 text-sm"
                     />
                     <input
                       type="number"
@@ -291,22 +242,22 @@ export default function CalkStructureModal({
                           Number(e.target.value)
                         )
                       }
-                      className="w-20 border rounded-md px-2 py-1 text-right"
+                      className="w-16 border rounded-md px-1 py-0.5 text-right text-sm"
                     />
                     <button
                       onClick={() => deleteSubbab(i, j)}
-                      className="text-red-500 hover:text-red-700"
+                      className="text-red-400 hover:text-red-600"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <TrashIcon className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 ))}
 
                 <button
                   onClick={() => addSubbab(i)}
-                  className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 mt-2"
+                  className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1"
                 >
-                  <PlusIcon className="w-4 h-4" />
+                  <PlusIcon className="w-3.5 h-3.5" />
                   Tambah Subbab
                 </button>
               </div>
@@ -315,18 +266,18 @@ export default function CalkStructureModal({
 
           <button
             onClick={addBab}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm"
           >
-            <PlusIcon className="w-5 h-5" />
+            <PlusIcon className="w-4 h-4" />
             Tambah Bab
           </button>
         </div>
 
         {/* 🔹 Footer */}
-        <div className="flex justify-end mt-6 border-t pt-4">
+        <div className="flex justify-end mt-4 border-t border-gray-200 pt-3">
           <button
             onClick={() => handleSave(babs)}
-            className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-md shadow"
+            className="bg-green-600 hover:bg-green-700 font-bold  text-white px-4 py-1.5 rounded-md shadow-sm text-sm"
           >
             Simpan Struktur
           </button>

@@ -127,7 +127,7 @@ export async function generateDaftarIsi(
       font: PDFFont,
       indent: number
     ) {
-      const lineHeight = fontSize + 2;
+      const lineHeight = fontSize + 1;
       const rightColumnWidth = 40;
       const maxTextWidth = usableWidth - rightColumnWidth - indent;
       const lines = wrapText(text, font, fontSize, maxTextWidth);
@@ -153,14 +153,16 @@ export async function generateDaftarIsi(
         color: rgb(0, 0, 0),
       });
 
+      // Garis horizontal penuh dari margin kiri ke margin kanan
       page.drawLine({
-        start: { x: marginLeft + indent, y: lastY - 4 },
-        end: { x: pageWidth - marginRight, y: lastY - 4 },
+        start: { x: marginLeft, y: lastY - 3 }, // dikurangi sedikit offset agar rapat
+        end: { x: pageWidth - marginRight, y: lastY - 3 },
         thickness: 0.5,
         color: rgb(0.3, 0.3, 0.3),
       });
 
-      currentY = lastY - 10;
+      // Kurangi jarak antar entry, agar lebih rapat
+      currentY = lastY - 6; // sebelumnya -10, sekarang -6
     }
 
     for (const bab of babs) {
@@ -170,7 +172,7 @@ export async function generateDaftarIsi(
       }
 
       const babText = `BAB ${bab.bab}. ${bab.judul}`;
-      drawCalkEntry(babText, bab.halamanMulai, fontBold, babIndent);
+      drawCalkEntry(babText, bab.halamanMulai, fontRegular, babIndent);
 
       if (bab.subbabs) {
         for (const sub of bab.subbabs) {
