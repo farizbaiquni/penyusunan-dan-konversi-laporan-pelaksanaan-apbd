@@ -56,6 +56,7 @@ export interface LampiranData {
   jumlahHalaman: number;
   isCALK: boolean;
   babs?: BabCalk[];
+  halamanTerakhirCALK?: number;
 }
 
 export interface DaftarIsiBabLampiranCALK {

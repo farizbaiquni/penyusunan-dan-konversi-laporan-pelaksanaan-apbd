@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 import { generateCoverRaperda } from "@/app/_utils/generate-cover";
 import { generateDaftarIsi } from "@/app/_utils/generate-daftar-isi";
-import { addFooterToPages } from "@/app/_utils/add-footers";
+import {
+  addFooterToPages,
+  addFooterToPagesCALK,
+} from "@/app/_utils/add-footers";
 import { DaftarIsiLampiran, LampiranData } from "@/app/_types/types";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
@@ -23,7 +26,13 @@ async function generateEntriesFromLampiran(
   for (const lampiran of lampirans) {
     const lampiranBytes = await lampiran.file.arrayBuffer();
     const lampiranDoc = await PDFDocument.load(lampiranBytes);
-    const jumlahHalaman = lampiranDoc.getPageCount();
+    let jumlahHalaman = lampiranDoc.getPageCount();
+
+    if (lampiran.isCALK && lampiran.halamanTerakhirCALK) {
+      const jumlahHalamanTanpaFooter =
+        jumlahHalaman - lampiran.halamanTerakhirCALK;
+      jumlahHalaman = jumlahHalaman - jumlahHalamanTanpaFooter;
+    }
 
     entries.push({
       id: crypto.randomUUID(),
@@ -128,17 +137,33 @@ export default function MenuPreview({
 
           const lampiranBytes = await lampiran.file.arrayBuffer();
           const lampiranDoc = await PDFDocument.load(lampiranBytes);
-          currentPageNumber = await addFooterToPages(
-            lampiranDoc,
-            currentPageNumber,
-            lampiran.footerWidth,
-            lampiran.footerX,
-            lampiran.footerY,
-            lampiran.footerHeight,
-            lampiran.fontSize,
-            lampiran.romawiLampiran,
-            lampiran.footerText
-          );
+
+          if (lampiran.isCALK) {
+            currentPageNumber = await addFooterToPagesCALK(
+              lampiranDoc,
+              currentPageNumber,
+              lampiran.footerWidth,
+              lampiran.footerX,
+              lampiran.footerY,
+              lampiran.footerHeight,
+              lampiran.fontSize,
+              lampiran.romawiLampiran,
+              lampiran.footerText,
+              lampiran.halamanTerakhirCALK ? lampiran.halamanTerakhirCALK : 0
+            );
+          } else {
+            currentPageNumber = await addFooterToPages(
+              lampiranDoc,
+              currentPageNumber,
+              lampiran.footerWidth,
+              lampiran.footerX,
+              lampiran.footerY,
+              lampiran.footerHeight,
+              lampiran.fontSize,
+              lampiran.romawiLampiran,
+              lampiran.footerText
+            );
+          }
 
           const lampiranPages = await finalPdf.copyPages(
             lampiranDoc,

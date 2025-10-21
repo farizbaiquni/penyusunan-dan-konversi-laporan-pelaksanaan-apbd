@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
-import { addFooter } from "@/app/_utils/add-footers";
+import { addFooter, addFooterLampiranCALK } from "@/app/_utils/add-footers";
 import UploadLampiran from "../UploadLampiran";
 import { BabCalk, LampiranData, MenuOption } from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
@@ -22,6 +22,7 @@ export default function MenuTambahLampiran({
   const [isCALK, setIsCALK] = useState(false);
   const [babCALK, setBabCALK] = useState<BabCalk[]>([]);
   const [openCALKModal, setOpenCALKModal] = useState(false);
+  const [halamanTerakhirCALK, setHalamanTerakhirCALK] = useState<number>(0);
   const [footer, setFooter] = useState({
     width: 91,
     x: 0,
@@ -44,17 +45,30 @@ export default function MenuTambahLampiran({
   const handleAddFooter = async (existingPdfBytes: ArrayBuffer) => {
     try {
       setIsGenerating(true);
-      const blobUrl = await addFooter(
-        footer.width,
-        footer.x,
-        footer.y,
-        footer.height,
-        footer.fontSize,
-        romawiLampiran,
-        footerText,
-        existingPdfBytes
-      );
-      setPreviewUrl(blobUrl);
+      if (isCALK) {
+        const blobUrl = await addFooterLampiranCALK(
+          footer.width,
+          footer.x,
+          footer.y,
+          footer.height,
+          footer.fontSize,
+          existingPdfBytes,
+          halamanTerakhirCALK
+        );
+        setPreviewUrl(blobUrl);
+      } else {
+        const blobUrl = await addFooter(
+          footer.width,
+          footer.x,
+          footer.y,
+          footer.height,
+          footer.fontSize,
+          romawiLampiran,
+          footerText,
+          existingPdfBytes
+        );
+        setPreviewUrl(blobUrl);
+      }
     } catch (err) {
       console.error("Gagal generate preview:", err);
       alert("Gagal generate preview PDF.");
@@ -92,21 +106,39 @@ export default function MenuTambahLampiran({
       const pdfDoc = await PDFDocument.load(fileDataRef.current);
       const jumlahHalaman = pdfDoc.getPageCount();
 
-      onAddLampiran({
-        urutan: 1, // bisa disesuaikan dari parent
-        file,
-        romawiLampiran,
-        judulPembatasLampiran,
-        footerText,
-        footerWidth: footer.width,
-        footerX: footer.x,
-        footerY: footer.y,
-        fontSize: footer.fontSize,
-        footerHeight: footer.height,
-        jumlahHalaman,
-        isCALK: isCALK,
-        babs: babCALK,
-      });
+      if (isCALK) {
+        onAddLampiran({
+          urutan: 1, // bisa disesuaikan dari parent
+          file,
+          romawiLampiran,
+          judulPembatasLampiran,
+          footerText,
+          footerWidth: footer.width,
+          footerX: footer.x,
+          footerY: footer.y,
+          fontSize: footer.fontSize,
+          footerHeight: footer.height,
+          jumlahHalaman,
+          isCALK: isCALK,
+          babs: babCALK,
+          halamanTerakhirCALK: halamanTerakhirCALK,
+        });
+      } else {
+        onAddLampiran({
+          urutan: 1, // bisa disesuaikan dari parent
+          file,
+          romawiLampiran,
+          judulPembatasLampiran,
+          footerText,
+          footerWidth: footer.width,
+          footerX: footer.x,
+          footerY: footer.y,
+          fontSize: footer.fontSize,
+          footerHeight: footer.height,
+          jumlahHalaman,
+          isCALK: false,
+        });
+      }
 
       alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
       setActiveMenu(MenuOption.LAMPIRAN_UTAMA);
@@ -155,15 +187,31 @@ export default function MenuTambahLampiran({
                   />
                   Apakah lampiran CALK
                 </label>
-                <button
-                  disabled={!isCALK}
-                  onClick={() => setOpenCALKModal(true)}
-                  className={`${
-                    isCALK ? "bg-blue-700 hover:bg-blue-800" : "bg-gray-400"
-                  } text-white px-2 py-1 rounded-md w-full sm:w-auto`}
-                >
-                  Atur Halaman CALK
-                </button>
+                <div className="flex gap-x-5">
+                  <input
+                    type="number"
+                    value={
+                      Number.isNaN(halamanTerakhirCALK)
+                        ? ""
+                        : halamanTerakhirCALK
+                    }
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setHalamanTerakhirCALK(val === "" ? NaN : parseInt(val));
+                    }}
+                    className="p-2 border rounded-sm"
+                    placeholder="Halaman terakhir CALK"
+                  />
+                  <button
+                    disabled={!isCALK}
+                    onClick={() => setOpenCALKModal(true)}
+                    className={`${
+                      isCALK ? "bg-blue-700 hover:bg-blue-800" : "bg-gray-400"
+                    } text-white px-2 py-1 rounded-md w-full sm:w-auto`}
+                  >
+                    Atur Daftar Halaman CALK
+                  </button>
+                </div>
               </div>
 
               {/* Romawi Lampiran */}

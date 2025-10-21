@@ -12,12 +12,7 @@ import MenuPreview from "./components/contents/MenuPreview";
 import MenuGenerate from "./components/contents/MenuGenerate";
 import MenuTambahLampiran from "./components/contents/MenuTambahLampiran";
 import MenuEditLampiranUtama from "./components/contents/MenuEditLaporanUtama";
-import {
-  BabCalk,
-  JenisLaporan,
-  LampiranData,
-  MenuOption,
-} from "../_types/types";
+import { JenisLaporan, LampiranData, MenuOption } from "../_types/types";
 
 interface SidebarLink {
   label: MenuOption;
@@ -141,8 +136,6 @@ export default function Home() {
     reorderLampiran,
   } = useLampiranManager();
 
-  const [lampiranUtamaCALK, setLampiranUtamaCALK] = useState<BabCalk[]>([]);
-
   const jumlahLampiranUtama = lampirans.length;
   const jumlahLampiranPendukung = 0;
 
@@ -172,10 +165,6 @@ export default function Home() {
     ],
     [jumlahLampiranUtama, jumlahLampiranPendukung]
   );
-
-  const onAddLampiranUtamaCALK = (data: BabCalk[]) => {
-    setLampiranUtamaCALK(data);
-  };
 
   const getMenuComponent = () => {
     switch (activeMenu) {
