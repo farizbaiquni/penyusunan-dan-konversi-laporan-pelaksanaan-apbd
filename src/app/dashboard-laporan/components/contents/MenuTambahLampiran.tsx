@@ -27,7 +27,7 @@ export default function MenuTambahLampiran({
     width: 91,
     x: 0,
     y: 27,
-    height: 27,
+    height: 20,
     fontSize: 8,
   });
 
@@ -70,7 +70,6 @@ export default function MenuTambahLampiran({
         setPreviewUrl(blobUrl);
       }
     } catch (err) {
-      console.error("Gagal generate preview:", err);
       alert("Gagal generate preview PDF.");
     } finally {
       setIsGenerating(false);
@@ -87,18 +86,9 @@ export default function MenuTambahLampiran({
     await handleAddFooter(fileDataRef.current);
   };
 
-  const downloadPdf = () => {
-    if (!previewUrl) return alert("Silakan generate preview dulu!");
-    const link = document.createElement("a");
-    link.href = previewUrl;
-    link.download = "pdf_with_footer.pdf";
-    link.click();
-    URL.revokeObjectURL(previewUrl); // cleanup
-  };
-
   const handleSimpan = async () => {
-    if (!romawiLampiran) return alert("Isi romawi lampiran!");
-    if (!footerText) return alert("Isi footer text!");
+    if (!isCALK && !romawiLampiran) return alert("Isi romawi lampiran!");
+    if (!isCALK && !footerText) return alert("Isi footer text!");
     if (!file || !fileDataRef.current)
       return alert("Unggah file PDF terlebih dahulu!");
 
@@ -178,44 +168,58 @@ export default function MenuTambahLampiran({
               <legend className="px-2 font-semibold">INFORMASI LAMPIRAN</legend>
 
               <div className="col-span-5 flex items-center justify-between px-2">
-                <label className="font-medium mb-1 block">
-                  <input
-                    type="checkbox"
-                    checked={isCALK}
-                    onChange={() => setIsCALK(!isCALK)}
-                    className="mr-2"
-                  />
-                  Apakah lampiran CALK
-                </label>
-                <div className="flex gap-x-5">
-                  <input
-                    type="number"
-                    value={
-                      Number.isNaN(halamanTerakhirCALK)
-                        ? ""
-                        : halamanTerakhirCALK
-                    }
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setHalamanTerakhirCALK(val === "" ? NaN : parseInt(val));
-                    }}
-                    className="p-2 border rounded-sm"
-                    placeholder="Halaman terakhir CALK"
-                  />
-                  <button
-                    disabled={!isCALK}
-                    onClick={() => setOpenCALKModal(true)}
-                    className={`${
-                      isCALK ? "bg-blue-700 hover:bg-blue-800" : "bg-gray-400"
-                    } text-white px-2 py-1 rounded-md w-full sm:w-auto`}
-                  >
-                    Atur Daftar Halaman CALK
-                  </button>
+                <div className="flex flex-col gap-y-3 w-full">
+                  <label className="font-medium mb-1 block">
+                    <input
+                      type="checkbox"
+                      checked={isCALK}
+                      onChange={() => setIsCALK(!isCALK)}
+                      className="mr-2"
+                    />
+                    Apakah lampiran CALK
+                  </label>
+                  <span className={`${isCALK ? "" : "hidden"}`}>
+                    <div className="flex flex-col gap-y-3">
+                      <div className="flex flex-col">
+                        <p>Penomoran Halaman terakhir CALK</p>
+                        <input
+                          disabled={!isCALK}
+                          type="number"
+                          value={
+                            Number.isNaN(halamanTerakhirCALK)
+                              ? ""
+                              : halamanTerakhirCALK
+                          }
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setHalamanTerakhirCALK(
+                              val === "" ? NaN : parseInt(val)
+                            );
+                          }}
+                          className={`p-2 border rounded-sm ${
+                            !isCALK && "bg-gray-300"
+                          }`}
+                          placeholder="Halaman terakhir CALK"
+                        />
+                      </div>
+                      <button
+                        disabled={!isCALK}
+                        onClick={() => setOpenCALKModal(true)}
+                        className={`${
+                          isCALK
+                            ? "bg-blue-700 hover:bg-blue-800"
+                            : "bg-gray-400"
+                        } text-white px-2 py-1 rounded-md max-w-[300px] sm:w-auto`}
+                      >
+                        Atur Daftar Halaman CALK
+                      </button>
+                    </div>
+                  </span>
                 </div>
               </div>
 
               {/* Romawi Lampiran */}
-              <div className="col-span-5">
+              <div className={`${isCALK ? "hidden" : "col-span-5"}`}>
                 <label className="font-medium mb-1 block">
                   Romawi Lampiran
                 </label>
@@ -227,7 +231,7 @@ export default function MenuTambahLampiran({
               </div>
 
               {/* Judul Pembatas */}
-              <div className="col-span-5">
+              <div className={`${isCALK ? "hidden" : "col-span-5"}`}>
                 <label className="font-medium mb-1 block">
                   Judul Pembatas Lampiran
                 </label>
@@ -239,7 +243,7 @@ export default function MenuTambahLampiran({
               </div>
 
               {/* Footer Text */}
-              <div className="col-span-5">
+              <div className={`${isCALK ? "hidden" : "col-span-5"}`}>
                 <label className="font-medium mb-1 block">
                   Keterangan Footer Halaman
                 </label>
@@ -251,22 +255,23 @@ export default function MenuTambahLampiran({
               </div>
 
               {/* Footer Settings */}
-              {footerSettings.map(({ label, key }, idx) => (
-                <div key={idx} className="flex flex-col">
-                  <label className="font-medium mb-1">{label}</label>
-                  <input
-                    type="number"
-                    value={footer[key as keyof typeof footer]}
-                    onChange={(e) =>
-                      setFooter((prev) => ({
-                        ...prev,
-                        [key]: Number(e.target.value),
-                      }))
-                    }
-                    className="p-2 border rounded-sm"
-                  />
-                </div>
-              ))}
+              {!isCALK &&
+                footerSettings.map(({ label, key }, idx) => (
+                  <div key={idx} className="flex flex-col">
+                    <label className="font-medium mb-1">{label}</label>
+                    <input
+                      type="number"
+                      value={footer[key as keyof typeof footer]}
+                      onChange={(e) =>
+                        setFooter((prev) => ({
+                          ...prev,
+                          [key]: Number(e.target.value),
+                        }))
+                      }
+                      className="p-2 border rounded-sm"
+                    />
+                  </div>
+                ))}
             </fieldset>
 
             {/* Tombol Aksi */}
@@ -281,13 +286,6 @@ export default function MenuTambahLampiran({
                 }`}
               >
                 {isGenerating ? "Memproses..." : "Preview Lampiran"}
-              </button>
-
-              <button
-                onClick={downloadPdf}
-                className="bg-blue-700 hover:bg-blue-800 text-white px-4 py-2 rounded-md w-full sm:w-auto"
-              >
-                Download PDF
               </button>
 
               <button
