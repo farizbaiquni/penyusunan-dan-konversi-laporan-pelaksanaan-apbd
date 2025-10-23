@@ -8,11 +8,11 @@ import {
   addFooterToPages,
   addFooterToPagesCALK,
 } from "@/app/_utils/add-footers";
-import { DaftarIsiLampiran, LampiranData } from "@/app/_types/types";
+import { DaftarIsiLampiran, LampiranDataUtama } from "@/app/_types/types";
 
 interface GenerateProps {
   batangTubuh: File | null;
-  lampirans: LampiranData[];
+  lampirans: LampiranDataUtama[];
 }
 
 export default function MenuGenerate({

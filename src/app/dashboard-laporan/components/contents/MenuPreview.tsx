@@ -8,17 +8,21 @@ import {
   addFooterToPages,
   addFooterToPagesCALK,
 } from "@/app/_utils/add-footers";
-import { BabCalk, DaftarIsiLampiran, LampiranData } from "@/app/_types/types";
+import {
+  BabCalk,
+  DaftarIsiLampiran,
+  LampiranDataUtama,
+} from "@/app/_types/types";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 interface PreviewProps {
   batangTubuh: File | null;
-  lampirans: LampiranData[];
+  lampirans: LampiranDataUtama[];
   onBack?: () => void; // untuk tombol kembali
 }
 
 async function generateEntriesFromLampiran(
-  lampirans: LampiranData[]
+  lampirans: LampiranDataUtama[]
 ): Promise<DaftarIsiLampiran[]> {
   const entries: DaftarIsiLampiran[] = [];
   let currentPage = 1; // nomor halaman PDF final saat ini

@@ -11,10 +11,11 @@ import {
 import OrderLampiranUtamaModal from "../../modals/OrderLampiranUtamaModal";
 import {
   JenisLaporan,
-  LampiranDataUtama,
+  LampiranDataPendukung,
   MenuOption,
 } from "@/app/_types/types";
 import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
+import OrderLampiranPendukungModal from "../../modals/OrderLampiranPendukungModal";
 
 /* ============================================================
    INTERFACE
@@ -22,16 +23,16 @@ import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 interface LampiranManagerProps {
   jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
-  lampirans: LampiranDataUtama[];
+  lampirans: LampiranDataPendukung[];
   onDeleteLampiran: (id: number) => void;
-  updateLampiranOrder: (newOrder: LampiranDataUtama[]) => void;
-  handleOnClickEditLampiran: (editedLampiran: LampiranDataUtama) => void;
+  updateLampiranOrder: (newOrder: LampiranDataPendukung[]) => void;
+  handleOnClickEditLampiran: (editedLampiran: LampiranDataPendukung) => void;
 }
 
 /* ============================================================
    KOMPONEN UTAMA
 ============================================================ */
-export default function MenuLampiran({
+export default function MenuLampiranPendukung({
   jenisLaporan,
   setActiveMenu,
   lampirans,
@@ -41,7 +42,7 @@ export default function MenuLampiran({
 }: LampiranManagerProps) {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
-  const [localOrder, setLocalOrder] = useState<LampiranDataUtama[]>([]);
+  const [localOrder, setLocalOrder] = useState<LampiranDataPendukung[]>([]);
 
   // Sinkronisasi order lokal dengan props
   useEffect(() => {
@@ -65,8 +66,7 @@ export default function MenuLampiran({
     setPreviewURL(url);
   }, []);
 
-  // Simpan perubahan urutan lampiran
-  const handleSaveOrder = useCallback(() => {
+  const handleSaveOrderLampiranPendukung = useCallback(() => {
     updateLampiranOrder(localOrder);
     setShowOrderModal(false);
   }, [localOrder, updateLampiranOrder]);
@@ -127,9 +127,6 @@ export default function MenuLampiran({
               <tr>
                 <th className="px-4 py-2 text-center">No.</th>
                 <th className="px-4 py-2 text-left">Nama File</th>
-                <th className="px-4 py-2 text-center">Romawi</th>
-                <th className="px-4 py-2 text-left">Judul Lampiran</th>
-                <th className="px-4 py-2 text-center">Jumlah Penomoran</th>
                 <th className="px-4 py-2 text-center">Total Lembar</th>
                 <th className="px-4 py-2 text-center">Ukuran</th>
                 <th className="px-4 py-2 text-center">Aksi</th>
@@ -150,11 +147,7 @@ export default function MenuLampiran({
                   >
                     {l.file.name}
                   </td>
-                  <td className="px-4 py-2 text-center font-semibold text-blue-600">
-                    {l.romawiLampiran}
-                  </td>
-                  <td className="px-4 py-2">{l.judulPembatasLampiran}</td>
-                  <td className="px-4 py-2 text-center">{l.jumlahHalaman}</td>
+
                   <td className="px-4 py-2">{l.jumlahTotalLembar}</td>
                   <td className="px-4 py-2 text-center">
                     {formatFileSize(l.file.size)}
@@ -199,11 +192,11 @@ export default function MenuLampiran({
 
       {/* MODAL: Urutan Lampiran */}
       {showOrderModal && (
-        <OrderLampiranUtamaModal
-          lampiran={localOrder}
+        <OrderLampiranPendukungModal
+          lampirans={localOrder}
           moveItem={moveItem}
           onClose={() => setShowOrderModal(false)}
-          onSave={handleSaveOrder}
+          onSave={handleSaveOrderLampiranPendukung}
         />
       )}
 

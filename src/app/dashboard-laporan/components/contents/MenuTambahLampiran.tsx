@@ -7,7 +7,7 @@ import UploadLampiran from "../UploadLampiran";
 import {
   BabCalk,
   JenisLaporan,
-  LampiranData,
+  LampiranDataUtama,
   MenuOption,
 } from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
@@ -16,7 +16,7 @@ import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 interface TambahLampiranProps {
   jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
-  onAddLampiran: (data: LampiranData) => void;
+  onAddLampiran: (data: LampiranDataUtama) => void;
   urutanLampiran: number;
 }
 
@@ -113,7 +113,7 @@ export default function MenuTambahLampiran({
         return alert("Jumlah halaman CALK melebihi total halaman file PDF!");
       }
 
-      const newLampiran: LampiranData = {
+      const newLampiran: LampiranDataUtama = {
         id: Date.now(),
         urutan: urutanLampiran + 1,
         file,
@@ -128,6 +128,7 @@ export default function MenuTambahLampiran({
         jumlahHalaman: isCALK ? halamanTerakhirCALK : jumlahHalaman,
         isCALK: isCALK,
         babs: babCALK,
+        jumlahTotalLembar: jumlahHalaman,
       };
       onAddLampiran(newLampiran);
 

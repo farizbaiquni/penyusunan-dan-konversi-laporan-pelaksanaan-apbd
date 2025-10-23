@@ -11,7 +11,13 @@ import MenuPreview from "./components/contents/MenuPreview";
 import MenuGenerate from "./components/contents/MenuGenerate";
 import MenuTambahLampiran from "./components/contents/MenuTambahLampiran";
 import MenuEditLampiranUtama from "./components/contents/MenuEditLaporanUtama";
-import { JenisLaporan, LampiranData, MenuOption } from "../_types/types";
+import {
+  JenisLaporan,
+  LampiranDataPendukung,
+  LampiranDataUtama,
+  MenuOption,
+} from "../_types/types";
+import MenuLampiranPendukung from "./components/contents/MenuLampiranPendukung";
 
 interface SidebarLink {
   label: MenuOption;
@@ -21,18 +27,17 @@ interface SidebarLink {
 
 // === CUSTOM HOOK UNTUK LAMPIRAN ===
 function useLampiranManager() {
-  const [lampirans, setLampirans] = useState<LampiranData[]>([]);
-  const [editedLampiran, setEditedLampiran] = useState<LampiranData | null>(
-    null
-  );
+  const [lampirans, setLampirans] = useState<LampiranDataUtama[]>([]);
+  const [editedLampiran, setEditedLampiran] =
+    useState<LampiranDataUtama | null>(null);
 
-  const addLampiran = async (newLampiran: LampiranData) => {
+  const addLampiran = async (newLampiran: LampiranDataUtama) => {
     setLampirans((prev) =>
       [...prev, newLampiran].sort((a, b) => a.urutan - b.urutan)
     );
   };
 
-  const updateLampiran = (updated: LampiranData) => {
+  const updateLampiran = (updated: LampiranDataUtama) => {
     setLampirans((prev) =>
       prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l))
     );
@@ -42,7 +47,7 @@ function useLampiranManager() {
     setLampirans((prev) => prev.filter((l) => l.id !== id));
   };
 
-  const reorderLampiran = (newOrder: LampiranData[]) => {
+  const reorderLampiran = (newOrder: LampiranDataUtama[]) => {
     setLampirans(newOrder);
   };
 
@@ -101,11 +106,16 @@ export default function Home() {
   const [jenisLaporan, setJenisLaporan] = useState<JenisLaporan>(
     JenisLaporan.RAPERDA
   );
+  const [editedLampiranPendukung, setEditedLampiranPendukung] =
+    useState<LampiranDataPendukung | null>(null);
   const [activeMenu, setActiveMenu] = useState<MenuOption>(
     MenuOption.INFORMASI_LAPORAN
   );
   const [batangTubuhFile, setBatangTubuhFile] = useState<File | null>(null);
   const [isUploadBatangTubuh, setIsUploadBatangTubuh] = useState(false);
+  const [lampiransPendukung, setLampiransPendukung] = useState<
+    LampiranDataPendukung[]
+  >([]);
 
   const [tahun, setTahun] = useState(2025);
   const [nomorPerdaPerbup, setNomorPerdaPerbup] = useState<number | null>(null);
@@ -212,6 +222,21 @@ export default function Home() {
               onEditLampiranUtama={updateLampiran}
             />
           )
+        );
+
+      case MenuOption.LAMPIRAN_PENDUKUNG:
+        return (
+          <MenuLampiranPendukung
+            jenisLaporan={jenisLaporan}
+            setActiveMenu={setActiveMenu}
+            lampirans={lampiransPendukung}
+            onDeleteLampiran={deleteLampiran}
+            updateLampiranOrder={setLampiransPendukung}
+            handleOnClickEditLampiran={(lampiran) => {
+              setEditedLampiranPendukung(lampiran);
+              setActiveMenu(MenuOption.EDIT_LAMPIRAN_UTAMA);
+            }}
+          />
         );
 
       case MenuOption.PREVIEW:

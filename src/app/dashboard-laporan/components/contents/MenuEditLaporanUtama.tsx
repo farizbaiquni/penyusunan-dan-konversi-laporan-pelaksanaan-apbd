@@ -12,14 +12,14 @@ import {
   addFooterLampiranCALK,
   addFooterToPagesCALK,
 } from "@/app/_utils/add-footers";
-import { BabCalk, LampiranData, MenuOption } from "@/app/_types/types";
+import { BabCalk, LampiranDataUtama, MenuOption } from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
 import { PDFDocument } from "pdf-lib";
 
 interface EditLampiranUtamaProps {
   setActiveMenu: (menu: MenuOption) => void;
-  lampiran: LampiranData;
-  onEditLampiranUtama: (updated: LampiranData) => void;
+  lampiran: LampiranDataUtama;
+  onEditLampiranUtama: (updated: LampiranDataUtama) => void;
 }
 
 export default function MenuEditLampiranUtama({

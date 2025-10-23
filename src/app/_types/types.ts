@@ -10,7 +10,7 @@ export enum MenuOption {
   GENERATE = "Generate",
 }
 
-export interface LampiranData {
+export interface LampiranDataUtama {
   id: number;
   urutan: number;
   file: File;
@@ -25,6 +25,15 @@ export interface LampiranData {
   jumlahHalaman: number;
   isCALK: boolean;
   babs?: BabCalk[];
+  jumlahTotalLembar: number;
+}
+
+export interface LampiranDataPendukung {
+  id: number;
+  urutan: number;
+  file: File;
+  judul: string;
+  jumlahTotalLembar: number;
 }
 
 export interface DaftarIsiLampiran {
