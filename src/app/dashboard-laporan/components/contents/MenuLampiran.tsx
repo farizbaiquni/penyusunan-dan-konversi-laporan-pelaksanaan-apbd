@@ -9,12 +9,14 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import OrderLampiranUtamaModal from "../../modals/OrderLampiranUtamaModal";
-import { LampiranData, MenuOption } from "@/app/_types/types";
+import { JenisLaporan, LampiranData, MenuOption } from "@/app/_types/types";
+import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 
 /* ============================================================
    INTERFACE
 ============================================================ */
 interface LampiranManagerProps {
+  jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
   lampirans: LampiranData[];
   onDeleteLampiran: (id: number) => void;
@@ -26,6 +28,7 @@ interface LampiranManagerProps {
    KOMPONEN UTAMA
 ============================================================ */
 export default function MenuLampiran({
+  jenisLaporan,
   setActiveMenu,
   lampirans,
   onDeleteLampiran,
@@ -86,18 +89,10 @@ export default function MenuLampiran({
     <div className="p-6 bg-white rounded-2xl shadow-md max-w-5xl mx-auto">
       {/* HEADER */}
       <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
-        <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2">
-          📎 Daftar Lampiran Utama
+        <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2 capitalize">
+          📎 Daftar Lampiran Utama {generateTextJenisLaporan(jenisLaporan)}
         </h2>
         <div className="flex gap-2">
-          <button
-            onClick={() => setActiveMenu(MenuOption.TAMBAH_LAMPIRAN_UTAMA_CALK)}
-            className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition"
-          >
-            <PlusCircleIcon className="w-5 h-5" />
-            Tambah Lampiran CALK
-          </button>
-
           <button
             onClick={() => setActiveMenu(MenuOption.TAMBAH_LAMPIRAN_UTAMA)}
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-sm shadow-sm transition"

@@ -111,15 +111,17 @@ export async function generateDaftarIsi(
   }
 
   /* --- Fungsi untuk menggambar isi CALK di bawah Lampiran --- */
+  // tambahkan parameter halamanTerakhir (opsional)
   function drawCALKSection(
     page: PDFPage,
     babs: BabCalk[],
-    startY: number
+    startY: number,
+    halamanTerakhir?: number
   ): number {
     let currentY = startY;
     const fontSize = 11;
-    const babIndent = 10; // tab untuk BAB
-    const subIndent = 30; // tab untuk Subbab
+    const babIndent = 10;
+    const subIndent = 30;
 
     function drawCalkEntry(
       text: string,
@@ -144,25 +146,40 @@ export async function generateDaftarIsi(
       }
 
       const lastY = currentY - lineHeight * lines.length;
-      const pageWidthNum = font.widthOfTextAtSize(pageNum.toString(), fontSize);
-      page.drawText(pageNum.toString(), {
-        x: pageWidth - marginRight - pageWidthNum,
-        y: lastY,
-        size: fontSize,
-        font,
-        color: rgb(0, 0, 0),
-      });
+
+      // Hanya gambar nomor halaman jika tidak ada pembatas atau pageNum <= halamanTerakhir
+      const shouldDrawPageNum =
+        typeof halamanTerakhir !== "number" || pageNum <= halamanTerakhir;
+
+      if (shouldDrawPageNum) {
+        const pageWidthNum = font.widthOfTextAtSize(
+          pageNum.toString(),
+          fontSize
+        );
+        page.drawText(pageNum.toString(), {
+          x: pageWidth - marginRight - pageWidthNum,
+          y: lastY,
+          size: fontSize,
+          font,
+          color: rgb(0, 0, 0),
+        });
+      } else {
+        // Jika ingin menampilkan placeholder (mis. dash) bisa diganti di sini.
+        // contoh: uncomment baris di bawah untuk menampilkan tanda '—'
+        // const dashW = font.widthOfTextAtSize("—", fontSize);
+        // page.drawText("—", { x: pageWidth - marginRight - dashW, y: lastY, size: fontSize, font, color: rgb(0,0,0) });
+      }
 
       // Garis horizontal penuh dari margin kiri ke margin kanan
       page.drawLine({
-        start: { x: marginLeft, y: lastY - 3 }, // dikurangi sedikit offset agar rapat
+        start: { x: marginLeft, y: lastY - 3 },
         end: { x: pageWidth - marginRight, y: lastY - 3 },
         thickness: 0.5,
         color: rgb(0.3, 0.3, 0.3),
       });
 
       // Kurangi jarak antar entry, agar lebih rapat
-      currentY = lastY - 6; // sebelumnya -10, sekarang -6
+      currentY = lastY - 6;
     }
 
     for (const bab of babs) {

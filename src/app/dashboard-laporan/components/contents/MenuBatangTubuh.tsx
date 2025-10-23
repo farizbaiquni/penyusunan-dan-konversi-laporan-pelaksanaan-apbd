@@ -2,13 +2,17 @@
 
 import React, { useState, useEffect, DragEvent } from "react";
 import { XMarkIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
+import { JenisLaporan } from "@/app/_types/types";
+import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 
 interface BatangTubuhProps {
+  jenisLaporan: JenisLaporan;
   batangTubuhFile: File | null;
   setBatangTubuh: (file: File | null) => void;
 }
 
 export default function MenuBatangTubuh({
+  jenisLaporan,
   batangTubuhFile,
   setBatangTubuh,
 }: BatangTubuhProps) {
@@ -64,11 +68,17 @@ export default function MenuBatangTubuh({
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex flex-col items-center py-12 px-4">
       {/* Header */}
       <div className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">
-          Unggah Batang Tubuh Peraturan Daerah
+        <h1 className="text-3xl font-bold text-gray-800 mb-2 capitalize">
+          Unggah Batang Tubuh {generateTextJenisLaporan(jenisLaporan)}
         </h1>
         <p className="text-gray-600 text-sm max-w-lg mx-auto">
-          Unggah berkas <span className="font-medium">Batang Tubuh Perda</span>{" "}
+          Unggah berkas{" "}
+          <span className="font-medium">
+            Batang Tubuh{" "}
+            <span className="capitalize">
+              {generateTextJenisLaporan(jenisLaporan)}
+            </span>
+          </span>{" "}
           dalam format <b>PDF</b>. Pastikan dokumen sesuai ketentuan penyusunan.
         </p>
       </div>

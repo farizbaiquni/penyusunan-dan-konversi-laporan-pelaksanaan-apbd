@@ -8,7 +8,7 @@ import {
   addFooterToPages,
   addFooterToPagesCALK,
 } from "@/app/_utils/add-footers";
-import { DaftarIsiLampiran, LampiranData } from "@/app/_types/types";
+import { BabCalk, DaftarIsiLampiran, LampiranData } from "@/app/_types/types";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 interface PreviewProps {
@@ -21,29 +21,42 @@ async function generateEntriesFromLampiran(
   lampirans: LampiranData[]
 ): Promise<DaftarIsiLampiran[]> {
   const entries: DaftarIsiLampiran[] = [];
-  let currentPage = 1;
+  let currentPage = 1; // nomor halaman PDF final saat ini
 
   for (const lampiran of lampirans) {
     const lampiranBytes = await lampiran.file.arrayBuffer();
     const lampiranDoc = await PDFDocument.load(lampiranBytes);
-    let jumlahHalaman = lampiranDoc.getPageCount();
+    const jumlahHalaman = lampiran.jumlahHalaman;
 
-    if (lampiran.isCALK && lampiran.halamanTerakhirCALK) {
-      const jumlahHalamanTanpaFooter =
-        jumlahHalaman - lampiran.halamanTerakhirCALK;
-      jumlahHalaman = jumlahHalaman - jumlahHalamanTanpaFooter;
+    // Jika lampiran CALK, sesuaikan halamanMulai bab/subbab
+    let adjustedBabs: BabCalk[] | undefined = undefined;
+    if (lampiran.isCALK && lampiran.babs) {
+      const offset = currentPage - 1; // halaman awal lampiran di PDF final
+      adjustedBabs = lampiran.babs.map((bab) => {
+        const newBab = { ...bab };
+        newBab.halamanMulai = (newBab.halamanMulai || 1) + offset;
+
+        if (newBab.subbabs) {
+          newBab.subbabs = newBab.subbabs.map((sub) => ({
+            ...sub,
+            halamanMulai: (sub.halamanMulai || 1) + offset,
+          }));
+        }
+        return newBab;
+      });
     }
 
     entries.push({
       id: crypto.randomUUID(),
       romawi: lampiran.romawiLampiran,
-      judul: lampiran.footerText || lampiran.file.name.replace(/\.pdf$/i, ""), // 🔹 judul lebih rapi
-      nomorHalaman: currentPage,
+      judul: lampiran.footerText || lampiran.file.name.replace(/\.pdf$/i, ""),
+      nomorHalaman: currentPage, // halaman pertama lampiran
+      jamlahPenomoranHalaman: jumlahHalaman,
       isCALK: lampiran.isCALK,
-      babs: lampiran.babs,
+      babs: adjustedBabs || lampiran.babs,
     });
 
-    currentPage += jumlahHalaman;
+    currentPage += jumlahHalaman; // update untuk lampiran berikutnya
   }
 
   return entries;
@@ -91,6 +104,7 @@ export default function MenuPreview({
 
         let currentPageNumber = 1;
         for (const lampiran of lampirans) {
+          console.log(lampiran);
           const pembatasPage = finalPdf.addPage([width, height]);
           const { width: pageWidth } = pembatasPage.getSize();
           const centerX = pageWidth / 2;
@@ -142,14 +156,10 @@ export default function MenuPreview({
             currentPageNumber = await addFooterToPagesCALK(
               lampiranDoc,
               currentPageNumber,
-              lampiran.footerWidth,
               lampiran.footerX,
               lampiran.footerY,
-              lampiran.footerHeight,
               lampiran.fontSize,
-              lampiran.romawiLampiran,
-              lampiran.footerText,
-              lampiran.halamanTerakhirCALK ? lampiran.halamanTerakhirCALK : 0
+              lampiran.jumlahHalaman + currentPageNumber - 1
             );
           } else {
             currentPageNumber = await addFooterToPages(
@@ -206,7 +216,7 @@ export default function MenuPreview({
   }, [previewUrl]);
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6 bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="px-2 py-3 max-w-5xl mx-auto space-y-3 bg-white rounded-sm shadow-sm border border-gray-200">
       {/* Header dengan tombol kembali */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold text-blue-700 flex items-center gap-2">
@@ -221,61 +231,62 @@ export default function MenuPreview({
             <span className="text-sm font-medium">Kembali</span>
           </button>
         )}
+        {/* Tombol Generate */}
+        <button
+          onClick={generateFinalPDF}
+          disabled={isGenerating}
+          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition text-white ${
+            isGenerating
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-700 hover:bg-blue-800"
+          }`}
+        >
+          {isGenerating ? (
+            <>
+              <svg
+                className="animate-spin h-5 w-5 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                />
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                />
+              </svg>
+              <span>Memproses...</span>
+            </>
+          ) : (
+            <>
+              🔄 <span>Perbarui Preview</span>
+            </>
+          )}
+        </button>
       </div>
 
-      {/* Tombol Generate */}
-      <button
-        onClick={generateFinalPDF}
-        disabled={isGenerating}
-        className={`flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg font-medium transition text-white ${
-          isGenerating
-            ? "bg-gray-400 cursor-not-allowed"
-            : "bg-blue-600 hover:bg-blue-700"
-        }`}
-      >
-        {isGenerating ? (
-          <>
-            <svg
-              className="animate-spin h-5 w-5 text-white"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-            >
-              <circle
-                className="opacity-25"
-                cx="12"
-                cy="12"
-                r="10"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-              <path
-                className="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-              />
-            </svg>
-            <span>Memproses...</span>
-          </>
-        ) : (
-          <>
-            🔄 <span>Perbarui Preview</span>
-          </>
-        )}
-      </button>
-
       {/* Preview PDF */}
-      {previewUrl ? (
-        <iframe
-          src={previewUrl}
-          className="w-full h-[800px] border rounded-md shadow-sm"
-          title="PDF Preview"
-        />
-      ) : (
-        <div className="text-center text-gray-500 py-20 border border-dashed rounded-lg">
-          Belum ada dokumen untuk ditampilkan.
-        </div>
-      )}
+      <div className="border rounded-md shadow-sm h-[550px] overflow-auto">
+        {previewUrl ? (
+          <iframe
+            src={previewUrl}
+            className="w-full h-full"
+            title="PDF Preview"
+          />
+        ) : (
+          <div className="text-center text-gray-500 py-20 border-dashed border h-full flex items-center justify-center">
+            Belum ada dokumen untuk ditampilkan.
+          </div>
+        )}
+      </div>
     </div>
   );
 }

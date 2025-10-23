@@ -10,12 +10,30 @@ export enum MenuOption {
   GENERATE = "Generate",
 }
 
+export interface LampiranData {
+  id: number;
+  urutan: number;
+  file: File;
+  romawiLampiran: string;
+  judulPembatasLampiran: string;
+  footerText: string;
+  footerWidth: number;
+  footerX: number;
+  footerY: number;
+  fontSize: number;
+  footerHeight: number;
+  jumlahHalaman: number;
+  isCALK: boolean;
+  babs?: BabCalk[];
+}
+
 export interface DaftarIsiLampiran {
   id: string;
   romawi: string;
   judul: string;
   nomorHalaman: number;
   isCALK: boolean;
+  jamlahPenomoranHalaman?: number;
   babs?: BabCalk[];
 }
 
@@ -39,24 +57,6 @@ export enum JenisLaporan {
   RAPERBUP = "Raperbup",
   PERDA = "Perda",
   PERBUP = "Perbup",
-}
-
-export interface LampiranData {
-  id: number;
-  urutan: number;
-  file: File;
-  romawiLampiran: string;
-  judulPembatasLampiran: string;
-  footerText: string;
-  footerWidth: number;
-  footerX: number;
-  footerY: number;
-  fontSize: number;
-  footerHeight: number;
-  jumlahHalaman: number;
-  isCALK: boolean;
-  babs?: BabCalk[];
-  halamanTerakhirCALK?: number;
 }
 
 export interface DaftarIsiBabLampiranCALK {

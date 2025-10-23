@@ -6,8 +6,11 @@ import {
   XCircleIcon,
   CheckIcon,
 } from "@heroicons/react/24/solid";
+import { JenisLaporan } from "@/app/_types/types";
+import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 
 interface InformasiLaporanProps {
+  jenisLaporan: JenisLaporan;
   tahun: number;
   jumlahLampiranUtama: number;
   jumlahLampiranPendukung: number;
@@ -20,6 +23,7 @@ interface InformasiLaporanProps {
 }
 
 export default function MenuInformasiLaporan({
+  jenisLaporan,
   tahun,
   jumlahLampiranUtama,
   jumlahLampiranPendukung,
@@ -62,13 +66,20 @@ export default function MenuInformasiLaporan({
       <div className="max-w-4xl mx-auto">
         {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
-            🗂️ Informasi Laporan Perda / Perbup
+          <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 capitalize">
+            🗂️ Informasi Laporan {generateTextJenisLaporan(jenisLaporan)}
           </h2>
         </div>
 
         {/* BAGIAN EDITABLE */}
-        <section className="bg-white border-t-4 border-blue-500 rounded-sm p-5 shadow-sm mb-6">
+        <section
+          className={`${
+            jenisLaporan === JenisLaporan.RAPERDA ||
+            jenisLaporan === JenisLaporan.RAPERBUP
+              ? "hidden"
+              : "bg-white border-t-4 border-blue-500 rounded-sm p-5 shadow-sm mb-6"
+          }`}
+        >
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
             📝 Data yang Dapat Diedit
           </h3>
@@ -87,7 +98,7 @@ export default function MenuInformasiLaporan({
 
           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-3">
             <label className="text-gray-600 text-sm w-40">
-              Nomor Perda / Perbup
+              Nomor {generateTextJenisLaporan(jenisLaporan)}
             </label>
             <input
               type="number"
@@ -138,13 +149,17 @@ export default function MenuInformasiLaporan({
             />
             <StatusCard isUpload={isUploadBatangTubuh} />
             <InfoCard
-              label="Nomor Perda / Perbup"
+              label={`Nomor ${generateTextJenisLaporan(jenisLaporan)}`}
               value={inputNomor ? `No. ${inputNomor}` : "Belum ditentukan"}
               icon="🧾"
               muted={!inputNomor}
             />
             <InfoCard label="Nama Bupati" value={inputNama} icon="🏛️" />
-            <InfoCard label="Tahun Perda" value={`${inputTahun}`} icon="📅" />
+            <InfoCard
+              label={`Tahun  ${generateTextJenisLaporan(jenisLaporan)}`}
+              value={`${inputTahun}`}
+              icon="📅"
+            />
           </div>
         </section>
       </div>
@@ -168,7 +183,7 @@ function InfoCard({ label, value, icon, muted, highlight }: InfoCardProps) {
         highlight ? "border-blue-300" : "border-gray-100"
       }`}
     >
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2 mb-1 capitalize">
         <span className="text-lg">{icon}</span>
         <span className="text-gray-600 text-sm font-medium">{label}</span>
       </div>

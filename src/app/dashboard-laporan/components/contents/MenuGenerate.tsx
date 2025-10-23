@@ -116,14 +116,10 @@ export default function MenuGenerate({
           currentPageNumber = await addFooterToPagesCALK(
             lampiranDoc,
             currentPageNumber,
-            lampiran.footerWidth,
             lampiran.footerX,
             lampiran.footerY,
-            lampiran.footerHeight,
             lampiran.fontSize,
-            lampiran.romawiLampiran,
-            lampiran.footerText,
-            lampiran.halamanTerakhirCALK ? lampiran.halamanTerakhirCALK : 0
+            lampiran.jumlahHalaman + currentPageNumber - 1
           );
         } else {
           currentPageNumber = await addFooterToPages(

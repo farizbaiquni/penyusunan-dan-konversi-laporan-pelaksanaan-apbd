@@ -7,8 +7,14 @@ import {
   ArrowUpTrayIcon,
   DocumentIcon,
 } from "@heroicons/react/24/outline";
-import { addFooter } from "@/app/_utils/add-footers";
-import { LampiranData, MenuOption } from "@/app/_types/types";
+import {
+  addFooter,
+  addFooterLampiranCALK,
+  addFooterToPagesCALK,
+} from "@/app/_utils/add-footers";
+import { BabCalk, LampiranData, MenuOption } from "@/app/_types/types";
+import CalkStructureModal from "../../modals/LampiranCALKModal";
+import { PDFDocument } from "pdf-lib";
 
 interface EditLampiranUtamaProps {
   setActiveMenu: (menu: MenuOption) => void;
@@ -37,24 +43,44 @@ export default function MenuEditLampiranUtama({
   const [dragOver, setDragOver] = useState(false);
   const [previewURL, setPreviewURL] = useState<string>("");
   const [isGenerating, setIsGenerating] = useState(false);
-  const fileBufferRef = useState<ArrayBuffer | null>(null)[0];
+  const [openCALKModal, setOpenCALKModal] = useState(false);
+  const [babCALK, setBabCALK] = useState<BabCalk[]>(
+    lampiran.isCALK && lampiran.babs ? lampiran.babs : []
+  );
+
+  const onAddLampiranUtamaCALK = (data: BabCalk[]) => {
+    setBabCALK(data);
+  };
 
   const generatePreview = async () => {
     const file = newFile ?? lampiran.file;
     if (!file) return;
     const buffer = await file.arrayBuffer();
+    let url = URL.createObjectURL(new Blob([buffer]));
 
     setIsGenerating(true);
-    const url = await addFooter(
-      footer.width,
-      footer.x,
-      footer.y,
-      footer.height,
-      footer.fontSize,
-      romawiLampiran,
-      footerText,
-      buffer
-    );
+    if (lampiran.isCALK) {
+      url = await addFooterLampiranCALK(
+        lampiran.footerWidth,
+        lampiran.footerX,
+        lampiran.footerY,
+        lampiran.footerHeight,
+        lampiran.fontSize,
+        buffer,
+        lampiran.jumlahHalaman
+      );
+    } else {
+      url = await addFooter(
+        footer.width,
+        footer.x,
+        footer.y,
+        footer.height,
+        footer.fontSize,
+        romawiLampiran,
+        footerText,
+        buffer
+      );
+    }
 
     if (previewURL) URL.revokeObjectURL(previewURL);
     setPreviewURL(url);
@@ -83,9 +109,16 @@ export default function MenuEditLampiranUtama({
   };
 
   const handleSave = () => {
-    if (!romawiLampiran || !judulLampiran || !footerText) {
-      alert("Silakan lengkapi semua field!");
-      return;
+    if (lampiran.isCALK) {
+      if (!romawiLampiran || !judulLampiran) {
+        alert("Silakan lengkapi semua field!");
+        return;
+      }
+    } else {
+      if (!romawiLampiran || !judulLampiran || !footerText) {
+        alert("Silakan lengkapi semua field!");
+        return;
+      }
     }
 
     onEditLampiranUtama({
@@ -99,6 +132,7 @@ export default function MenuEditLampiranUtama({
       footerX: footer.x,
       footerY: footer.y,
       fontSize: footer.fontSize,
+      babs: lampiran.isCALK ? babCALK : [],
     });
 
     setActiveMenu(MenuOption.LAMPIRAN_UTAMA);
@@ -109,7 +143,7 @@ export default function MenuEditLampiranUtama({
       {/* Header */}
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold text-gray-800">
-          ✏️ Edit Lampiran Utama
+          ✏️ Edit Lampiran Utama {lampiran.isCALK ? "CALK" : ""}
         </h2>
         <button
           onClick={() => setActiveMenu(MenuOption.LAMPIRAN_UTAMA)}
@@ -184,10 +218,8 @@ export default function MenuEditLampiranUtama({
         </div>
 
         {/* Footer Text */}
-        <div>
-          <label className="block text-gray-700 font-medium mb-1">
-            Footer Text
-          </label>
+        <div className={`${lampiran.isCALK ? "hidden" : "block "}`}>
+          <label className="text-gray-700 font-medium mb-1">Footer Text</label>
           <input
             type="text"
             value={footerText}
@@ -197,7 +229,9 @@ export default function MenuEditLampiranUtama({
         </div>
 
         {/* Footer Settings (satu baris) */}
-        <div className="flex flex-wrap gap-4">
+        <div
+          className={`${lampiran.isCALK ? "hidden" : "flex flex-wrap gap-4"}`}
+        >
           <div className="flex-1 min-w-[120px]">
             <label className="block text-gray-700 font-medium mb-1">
               Lebar Footer
@@ -275,6 +309,12 @@ export default function MenuEditLampiranUtama({
             {isGenerating ? "Memproses..." : "Preview"}
           </button>
           <button
+            onClick={() => setOpenCALKModal(!openCALKModal)}
+            className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium transition"
+          >
+            Edit Calk
+          </button>
+          <button
             onClick={() => setActiveMenu(MenuOption.LAMPIRAN_UTAMA)}
             className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium transition"
           >
@@ -304,6 +344,14 @@ export default function MenuEditLampiranUtama({
           </div>
         )}
       </div>
+
+      {openCALKModal && (
+        <CalkStructureModal
+          onClose={() => setOpenCALKModal(false)}
+          initialData={babCALK}
+          onAddLampiranUtamaCALK={onAddLampiranUtamaCALK}
+        />
+      )}
     </div>
   );
 }

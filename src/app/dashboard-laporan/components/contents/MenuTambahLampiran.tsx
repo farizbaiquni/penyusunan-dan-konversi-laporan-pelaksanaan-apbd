@@ -4,17 +4,27 @@ import { useState, useRef } from "react";
 import { PDFDocument } from "pdf-lib";
 import { addFooter, addFooterLampiranCALK } from "@/app/_utils/add-footers";
 import UploadLampiran from "../UploadLampiran";
-import { BabCalk, LampiranData, MenuOption } from "@/app/_types/types";
+import {
+  BabCalk,
+  JenisLaporan,
+  LampiranData,
+  MenuOption,
+} from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
+import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 
 interface TambahLampiranProps {
+  jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
-  onAddLampiran: (data: Omit<LampiranData, "id">) => void;
+  onAddLampiran: (data: LampiranData) => void;
+  urutanLampiran: number;
 }
 
 export default function MenuTambahLampiran({
+  jenisLaporan,
   setActiveMenu,
   onAddLampiran,
+  urutanLampiran,
 }: TambahLampiranProps) {
   const [romawiLampiran, setRomawiLampiran] = useState("");
   const [judulPembatasLampiran, setJudulPembatasLampiran] = useState("");
@@ -96,39 +106,30 @@ export default function MenuTambahLampiran({
       const pdfDoc = await PDFDocument.load(fileDataRef.current);
       const jumlahHalaman = pdfDoc.getPageCount();
 
-      if (isCALK) {
-        onAddLampiran({
-          urutan: 1, // bisa disesuaikan dari parent
-          file,
-          romawiLampiran,
-          judulPembatasLampiran,
-          footerText,
-          footerWidth: footer.width,
-          footerX: footer.x,
-          footerY: footer.y,
-          fontSize: footer.fontSize,
-          footerHeight: footer.height,
-          jumlahHalaman,
-          isCALK: isCALK,
-          babs: babCALK,
-          halamanTerakhirCALK: halamanTerakhirCALK,
-        });
-      } else {
-        onAddLampiran({
-          urutan: 1, // bisa disesuaikan dari parent
-          file,
-          romawiLampiran,
-          judulPembatasLampiran,
-          footerText,
-          footerWidth: footer.width,
-          footerX: footer.x,
-          footerY: footer.y,
-          fontSize: footer.fontSize,
-          footerHeight: footer.height,
-          jumlahHalaman,
-          isCALK: false,
-        });
+      if (isCALK && (!halamanTerakhirCALK || halamanTerakhirCALK <= 0)) {
+        return alert("Set jumlah halaman terakhir CALK terlebih dahulu!");
       }
+      if (isCALK && halamanTerakhirCALK > jumlahHalaman) {
+        return alert("Jumlah halaman CALK melebihi total halaman file PDF!");
+      }
+
+      const newLampiran: LampiranData = {
+        id: Date.now(),
+        urutan: urutanLampiran + 1,
+        file,
+        romawiLampiran,
+        judulPembatasLampiran,
+        footerText,
+        footerWidth: footer.width,
+        footerX: footer.x,
+        footerY: footer.y,
+        fontSize: footer.fontSize,
+        footerHeight: footer.height,
+        jumlahHalaman: isCALK ? halamanTerakhirCALK : jumlahHalaman,
+        isCALK: isCALK,
+        babs: babCALK,
+      };
+      onAddLampiran(newLampiran);
 
       alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
       setActiveMenu(MenuOption.LAMPIRAN_UTAMA);
@@ -148,8 +149,8 @@ export default function MenuTambahLampiran({
 
   return (
     <div className="p-6 bg-gray-100 min-h-screen">
-      <h1 className="text-xl font-bold text-gray-800 mb-2 ml-6">
-        Tambah Lampiran Perda
+      <h1 className="text-xl font-bold text-gray-800 mb-2 ml-6 capitalize">
+        Tambah Lampiran {generateTextJenisLaporan(jenisLaporan)}
       </h1>
 
       <div className="bg-white p-6 rounded-xl shadow-lg mb-6">
@@ -219,7 +220,7 @@ export default function MenuTambahLampiran({
               </div>
 
               {/* Romawi Lampiran */}
-              <div className={`${isCALK ? "hidden" : "col-span-5"}`}>
+              <div className="col-span-5">
                 <label className="font-medium mb-1 block">
                   Romawi Lampiran
                 </label>
@@ -231,7 +232,7 @@ export default function MenuTambahLampiran({
               </div>
 
               {/* Judul Pembatas */}
-              <div className={`${isCALK ? "hidden" : "col-span-5"}`}>
+              <div className="col-span-5">
                 <label className="font-medium mb-1 block">
                   Judul Pembatas Lampiran
                 </label>

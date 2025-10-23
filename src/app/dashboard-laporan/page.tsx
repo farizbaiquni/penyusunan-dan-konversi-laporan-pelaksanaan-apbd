@@ -2,7 +2,6 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
-import { PDFDocument } from "pdf-lib";
 
 // === Komponen konten ===
 import MenuInformasiLaporan from "./components/contents/MenuInformasiLaporan";
@@ -27,21 +26,7 @@ function useLampiranManager() {
     null
   );
 
-  const getPdfPageCount = async (file: File): Promise<number> => {
-    const pdfDoc = await PDFDocument.load(await file.arrayBuffer());
-    return pdfDoc.getPageCount();
-  };
-
-  const addLampiran = async (
-    data: Omit<LampiranData, "id" | "jumlahHalaman">
-  ) => {
-    const pages = await getPdfPageCount(data.file);
-    const newLampiran: LampiranData = {
-      ...data,
-      id: Date.now(),
-      urutan: lampirans.length + 1,
-      jumlahHalaman: pages,
-    };
+  const addLampiran = async (newLampiran: LampiranData) => {
     setLampirans((prev) =>
       [...prev, newLampiran].sort((a, b) => a.urutan - b.urutan)
     );
@@ -114,7 +99,7 @@ Sidebar.displayName = "Sidebar";
 // === KOMPONEN UTAMA ===
 export default function Home() {
   const [jenisLaporan, setJenisLaporan] = useState<JenisLaporan>(
-    JenisLaporan.PERDA
+    JenisLaporan.RAPERDA
   );
   const [activeMenu, setActiveMenu] = useState<MenuOption>(
     MenuOption.INFORMASI_LAPORAN
@@ -171,6 +156,7 @@ export default function Home() {
       case MenuOption.INFORMASI_LAPORAN:
         return (
           <MenuInformasiLaporan
+            jenisLaporan={jenisLaporan}
             tahun={tahun}
             jumlahLampiranUtama={jumlahLampiranUtama}
             jumlahLampiranPendukung={jumlahLampiranPendukung}
@@ -186,6 +172,7 @@ export default function Home() {
       case MenuOption.BATANG_TUBUH:
         return (
           <MenuBatangTubuh
+            jenisLaporan={jenisLaporan}
             batangTubuhFile={batangTubuhFile}
             setBatangTubuh={(file) => setBatangTubuhFile(file)}
           />
@@ -194,6 +181,7 @@ export default function Home() {
       case MenuOption.LAMPIRAN_UTAMA:
         return (
           <Lampiran
+            jenisLaporan={jenisLaporan}
             setActiveMenu={setActiveMenu}
             lampirans={lampirans}
             onDeleteLampiran={deleteLampiran}
@@ -208,8 +196,10 @@ export default function Home() {
       case MenuOption.TAMBAH_LAMPIRAN_UTAMA:
         return (
           <MenuTambahLampiran
+            jenisLaporan={jenisLaporan}
             setActiveMenu={setActiveMenu}
             onAddLampiran={addLampiran}
+            urutanLampiran={lampirans.length + 1}
           />
         );
 
