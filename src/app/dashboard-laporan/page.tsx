@@ -18,6 +18,7 @@ import {
   MenuOption,
 } from "../_types/types";
 import MenuLampiranPendukung from "./components/contents/MenuLampiranPendukung";
+import MenuTambahLampiranPendukung from "./components/contents/MenuTambahLampiranPendukung";
 
 interface SidebarLink {
   label: MenuOption;
@@ -134,6 +135,16 @@ export default function Home() {
   const jumlahLampiranUtama = lampirans.length;
   const jumlahLampiranPendukung = 0;
 
+  const deleteLampiranPendukung = (id: string) => {
+    setLampiransPendukung((prev) => prev.filter((l) => l.id !== id));
+  };
+
+  const addLampiranPendukung = async (newLampiran: LampiranDataPendukung) => {
+    setLampiransPendukung((prev) =>
+      [...prev, newLampiran].sort((a, b) => a.urutan - b.urutan)
+    );
+  };
+
   useEffect(() => {
     setIsUploadBatangTubuh(batangTubuhFile !== null);
   }, [batangTubuhFile]);
@@ -230,7 +241,7 @@ export default function Home() {
             jenisLaporan={jenisLaporan}
             setActiveMenu={setActiveMenu}
             lampirans={lampiransPendukung}
-            onDeleteLampiran={deleteLampiran}
+            onDeleteLampiran={deleteLampiranPendukung}
             updateLampiranOrder={setLampiransPendukung}
             handleOnClickEditLampiran={(lampiran) => {
               setEditedLampiranPendukung(lampiran);
@@ -239,9 +250,23 @@ export default function Home() {
           />
         );
 
+      case MenuOption.TAMBAH_LAMPIRAN_PENDUKUNG:
+        return (
+          <MenuTambahLampiranPendukung
+            jenisLaporan={jenisLaporan}
+            setActiveMenu={setActiveMenu}
+            onAddLampiran={addLampiranPendukung}
+            urutanLampiran={lampiransPendukung.length + 1}
+          />
+        );
+
       case MenuOption.PREVIEW:
         return (
-          <MenuPreview batangTubuh={batangTubuhFile} lampirans={lampirans} />
+          <MenuPreview
+            batangTubuh={batangTubuhFile}
+            lampirans={lampirans}
+            lampiransPendukung={lampiransPendukung}
+          />
         );
 
       case MenuOption.GENERATE:

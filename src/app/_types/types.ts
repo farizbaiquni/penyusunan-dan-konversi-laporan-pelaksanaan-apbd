@@ -6,6 +6,7 @@ export enum MenuOption {
   TAMBAH_LAMPIRAN_UTAMA_CALK = "Tambah Lampiran Utama CALK",
   EDIT_LAMPIRAN_UTAMA = "Edit Lampiran Utama",
   LAMPIRAN_PENDUKUNG = "Lampiran Pendukung",
+  TAMBAH_LAMPIRAN_PENDUKUNG = "Tambah Lampiran Pendukung",
   PREVIEW = "Preview",
   GENERATE = "Generate",
 }
@@ -29,7 +30,7 @@ export interface LampiranDataUtama {
 }
 
 export interface LampiranDataPendukung {
-  id: number;
+  id: string;
   urutan: number;
   file: File;
   judul: string;

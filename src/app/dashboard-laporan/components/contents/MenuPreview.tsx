@@ -11,6 +11,7 @@ import {
 import {
   BabCalk,
   DaftarIsiLampiran,
+  LampiranDataPendukung,
   LampiranDataUtama,
 } from "@/app/_types/types";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
@@ -18,6 +19,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 interface PreviewProps {
   batangTubuh: File | null;
   lampirans: LampiranDataUtama[];
+  lampiransPendukung: LampiranDataPendukung[];
   onBack?: () => void; // untuk tombol kembali
 }
 
@@ -69,6 +71,7 @@ async function generateEntriesFromLampiran(
 export default function MenuPreview({
   batangTubuh,
   lampirans,
+  lampiransPendukung,
   onBack,
 }: PreviewProps) {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -108,7 +111,6 @@ export default function MenuPreview({
 
         let currentPageNumber = 1;
         for (const lampiran of lampirans) {
-          console.log(lampiran);
           const pembatasPage = finalPdf.addPage([width, height]);
           const { width: pageWidth } = pembatasPage.getSize();
           const centerX = pageWidth / 2;
@@ -185,6 +187,16 @@ export default function MenuPreview({
           );
           lampiranPages.forEach((p) => finalPdf.addPage(p));
         }
+      }
+
+      for (const pendukung of lampiransPendukung) {
+        const pendukungBytes = await pendukung.file.arrayBuffer();
+        const pendukungDoc = await PDFDocument.load(pendukungBytes);
+        const pendukungPages = await finalPdf.copyPages(
+          pendukungDoc,
+          pendukungDoc.getPageIndices()
+        );
+        pendukungPages.forEach((p) => finalPdf.addPage(p));
       }
 
       // 4️⃣ Simpan hasil PDF ke blob URL
