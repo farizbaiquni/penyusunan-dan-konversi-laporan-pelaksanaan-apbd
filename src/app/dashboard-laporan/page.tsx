@@ -19,6 +19,7 @@ import {
 } from "../_types/types";
 import MenuLampiranPendukung from "./components/contents/MenuLampiranPendukung";
 import MenuTambahLampiranPendukung from "./components/contents/MenuTambahLampiranPendukung";
+import MenuEditLampiranPendukung from "./components/contents/MenuEditLampiranPendukung";
 
 interface SidebarLink {
   label: MenuOption;
@@ -145,6 +146,12 @@ export default function Home() {
     );
   };
 
+  const updateLampiranPendukung = (updated: LampiranDataPendukung) => {
+    setLampiransPendukung((prev) =>
+      prev.map((l) => (l.id === updated.id ? { ...l, ...updated } : l))
+    );
+  };
+
   useEffect(() => {
     setIsUploadBatangTubuh(batangTubuhFile !== null);
   }, [batangTubuhFile]);
@@ -225,14 +232,14 @@ export default function Home() {
         );
 
       case MenuOption.EDIT_LAMPIRAN_UTAMA:
-        return (
-          editedLampiran && (
-            <MenuEditLampiranUtama
-              setActiveMenu={setActiveMenu}
-              lampiran={editedLampiran}
-              onEditLampiranUtama={updateLampiran}
-            />
-          )
+        return editedLampiran ? (
+          <MenuEditLampiranUtama
+            setActiveMenu={setActiveMenu}
+            lampiran={editedLampiran}
+            onEditLampiranUtama={updateLampiran}
+          />
+        ) : (
+          <p>File belum dipilih</p>
         );
 
       case MenuOption.LAMPIRAN_PENDUKUNG:
@@ -245,7 +252,7 @@ export default function Home() {
             updateLampiranOrder={setLampiransPendukung}
             handleOnClickEditLampiran={(lampiran) => {
               setEditedLampiranPendukung(lampiran);
-              setActiveMenu(MenuOption.EDIT_LAMPIRAN_UTAMA);
+              setActiveMenu(MenuOption.EDIT_LAMPIRAN_PENDUKUNG);
             }}
           />
         );
@@ -258,6 +265,18 @@ export default function Home() {
             onAddLampiran={addLampiranPendukung}
             urutanLampiran={lampiransPendukung.length + 1}
           />
+        );
+
+      case MenuOption.EDIT_LAMPIRAN_PENDUKUNG:
+        return (
+          editedLampiranPendukung && (
+            <MenuEditLampiranPendukung
+              jenisLaporan={jenisLaporan}
+              setActiveMenu={setActiveMenu}
+              lampiran={editedLampiranPendukung}
+              onEditLampiranPendukung={updateLampiranPendukung}
+            />
+          )
         );
 
       case MenuOption.PREVIEW:

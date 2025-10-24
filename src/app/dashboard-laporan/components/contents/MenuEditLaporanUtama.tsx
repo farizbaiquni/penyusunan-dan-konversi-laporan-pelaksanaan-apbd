@@ -7,14 +7,9 @@ import {
   ArrowUpTrayIcon,
   DocumentIcon,
 } from "@heroicons/react/24/outline";
-import {
-  addFooter,
-  addFooterLampiranCALK,
-  addFooterToPagesCALK,
-} from "@/app/_utils/add-footers";
+import { addFooter, addFooterLampiranCALK } from "@/app/_utils/add-footers";
 import { BabCalk, LampiranDataUtama, MenuOption } from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
-import { PDFDocument } from "pdf-lib";
 
 interface EditLampiranUtamaProps {
   setActiveMenu: (menu: MenuOption) => void;

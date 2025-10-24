@@ -8,7 +8,6 @@ import {
   Cog6ToothIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
-import OrderLampiranUtamaModal from "../../modals/OrderLampiranUtamaModal";
 import {
   JenisLaporan,
   LampiranDataPendukung,
@@ -94,7 +93,7 @@ export default function MenuLampiranPendukung({
       {/* HEADER */}
       <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
         <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2 capitalize">
-          📎 Daftar Lampiran Utama {generateTextJenisLaporan(jenisLaporan)}
+          📎 Daftar Lampiran Pendukung {generateTextJenisLaporan(jenisLaporan)}
         </h2>
         <div className="flex gap-2">
           <button

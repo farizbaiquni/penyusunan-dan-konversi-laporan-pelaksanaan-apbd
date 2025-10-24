@@ -7,6 +7,7 @@ export enum MenuOption {
   EDIT_LAMPIRAN_UTAMA = "Edit Lampiran Utama",
   LAMPIRAN_PENDUKUNG = "Lampiran Pendukung",
   TAMBAH_LAMPIRAN_PENDUKUNG = "Tambah Lampiran Pendukung",
+  EDIT_LAMPIRAN_PENDUKUNG = "Edit Lampiran Pendukung",
   PREVIEW = "Preview",
   GENERATE = "Generate",
 }
