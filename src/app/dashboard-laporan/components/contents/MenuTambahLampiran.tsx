@@ -12,6 +12,7 @@ import {
 } from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
 import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
+import { v4 } from "uuid";
 
 interface TambahLampiranProps {
   jenisLaporan: JenisLaporan;
@@ -80,7 +81,7 @@ export default function MenuTambahLampiran({
         setPreviewUrl(blobUrl);
       }
     } catch (err) {
-      alert("Gagal generate preview PDF.");
+      alert("Gagal generate preview PDF." + err);
     } finally {
       setIsGenerating(false);
     }
@@ -114,7 +115,7 @@ export default function MenuTambahLampiran({
       }
 
       const newLampiran: LampiranDataUtama = {
-        id: Date.now(),
+        id: v4(),
         urutan: urutanLampiran + 1,
         file,
         romawiLampiran,

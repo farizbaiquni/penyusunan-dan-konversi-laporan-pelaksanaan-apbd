@@ -45,7 +45,7 @@ function useLampiranManager() {
     );
   };
 
-  const deleteLampiran = (id: number) => {
+  const deleteLampiran = (id: string) => {
     setLampirans((prev) => prev.filter((l) => l.id !== id));
   };
 

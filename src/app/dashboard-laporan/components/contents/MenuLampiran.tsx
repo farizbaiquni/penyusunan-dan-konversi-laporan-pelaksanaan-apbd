@@ -23,7 +23,7 @@ interface LampiranManagerProps {
   jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
   lampirans: LampiranDataUtama[];
-  onDeleteLampiran: (id: number) => void;
+  onDeleteLampiran: (id: string) => void;
   updateLampiranOrder: (newOrder: LampiranDataUtama[]) => void;
   handleOnClickEditLampiran: (editedLampiran: LampiranDataUtama) => void;
 }

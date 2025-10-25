@@ -1,3 +1,30 @@
+export interface DokumenLaporan {
+  id: string;
+  jenisLaporan: JenisLaporan;
+  tahun: number;
+  nomor: number | null;
+  tanggalPengesahan: string;
+  status: StatusDokumenLaporan;
+  batangTubuh: string | null;
+  lampirans: LampiranDataUtama[];
+  lampiransPendukung: LampiranDataPendukung[];
+}
+
+export enum StatusDokumenLaporan {
+  BELUM_DIBUAT = "belum dibuat",
+  PROSES = "proses",
+  SELESAI = "selesai",
+}
+
+export interface RangkumanDokumenLaporanTahunan {
+  id: string;
+  tahun: number;
+  statusRaperda: StatusDokumenLaporan;
+  statusPerda: StatusDokumenLaporan;
+  statusRaperbup: StatusDokumenLaporan;
+  statusPerbup: StatusDokumenLaporan;
+}
+
 export enum MenuOption {
   INFORMASI_LAPORAN = "Informasi Laporan",
   BATANG_TUBUH = "Batang Tubuh",
@@ -13,7 +40,7 @@ export enum MenuOption {
 }
 
 export interface LampiranDataUtama {
-  id: number;
+  id: string;
   urutan: number;
   file: File;
   romawiLampiran: string;
@@ -64,10 +91,10 @@ export interface SubbabCalk {
 }
 
 export enum JenisLaporan {
-  RAPERDA = "Raperda",
-  RAPERBUP = "Raperbup",
-  PERDA = "Perda",
-  PERBUP = "Perbup",
+  RAPERDA = "raperda",
+  RAPERBUP = "raperbup",
+  PERDA = "perda",
+  PERBUP = "perbup",
 }
 
 export interface DaftarIsiBabLampiranCALK {

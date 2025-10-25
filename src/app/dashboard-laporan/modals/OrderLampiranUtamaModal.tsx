@@ -8,7 +8,7 @@ import {
 
 interface OrderModalProps {
   lampiran: {
-    id: number;
+    id: string;
     romawiLampiran: string;
     judulPembatasLampiran: string;
     file: File;
