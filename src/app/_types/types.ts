@@ -1,29 +1,14 @@
-export interface DokumenLaporan {
-  id: string;
-  jenisLaporan: JenisLaporan;
-  tahun: number;
-  nomor: number | null;
-  tanggalPengesahan: string;
-  status: StatusDokumenLaporan;
-  batangTubuh: string | null;
-  lampirans: LampiranDataUtama[];
-  lastUpdated: string | null;
-  lampiransPendukung: LampiranDataPendukung[];
+export enum JenisLaporan {
+  RAPERDA = "raperda",
+  RAPERBUP = "raperbup",
+  PERDA = "perda",
+  PERBUP = "perbup",
 }
 
 export enum StatusDokumenLaporan {
   BELUM_DIBUAT = "belum dibuat",
   PROSES = "proses",
   SELESAI = "selesai",
-}
-
-export interface RangkumanDokumenLaporanTahunan {
-  id: string;
-  tahun: number;
-  statusRaperda: StatusDokumenLaporan;
-  statusPerda: StatusDokumenLaporan;
-  statusRaperbup: StatusDokumenLaporan;
-  statusPerbup: StatusDokumenLaporan;
 }
 
 export enum MenuOption {
@@ -38,6 +23,28 @@ export enum MenuOption {
   EDIT_LAMPIRAN_PENDUKUNG = "Edit Lampiran Pendukung",
   PREVIEW = "Preview",
   GENERATE = "Generate",
+}
+
+export interface RangkumanDokumenLaporanTahunan {
+  id: string;
+  tahun: number;
+  statusRaperda: StatusDokumenLaporan;
+  statusPerda: StatusDokumenLaporan;
+  statusRaperbup: StatusDokumenLaporan;
+  statusPerbup: StatusDokumenLaporan;
+}
+
+export interface DokumenLaporan {
+  id: string;
+  jenisLaporan: JenisLaporan;
+  tahun: number;
+  nomor: number | null;
+  tanggalPengesahan: Date | null;
+  status: StatusDokumenLaporan;
+  batangTubuh: string | null;
+  lampirans: LampiranDataUtama[];
+  lastUpdated: Date | null;
+  lampiransPendukung: LampiranDataPendukung[];
 }
 
 export interface LampiranDataUtama {
@@ -89,13 +96,6 @@ export interface SubbabCalk {
   subbab: string;
   judul: string;
   halamanMulai: number;
-}
-
-export enum JenisLaporan {
-  RAPERDA = "raperda",
-  RAPERBUP = "raperbup",
-  PERDA = "perda",
-  PERBUP = "perbup",
 }
 
 export interface DaftarIsiBabLampiranCALK {

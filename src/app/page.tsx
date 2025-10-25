@@ -16,9 +16,10 @@ import {
 } from "./_types/types";
 import { useEffect, useState } from "react";
 import TambahDokumenModal from "./_components/modals/TambahDokumenModal";
+import { getLast5YearsRangkuman } from "./_lib/_queries/rangkuman-tahunan";
 
 // ✅ Data ringkasan tahunan (tabel & ringkasan)
-const rangkumanTahunan: RangkumanDokumenLaporanTahunan[] = [
+const rangkumanTahunanTemplate: RangkumanDokumenLaporanTahunan[] = [
   {
     id: "tahun-2023",
     tahun: 2023,
@@ -47,10 +48,24 @@ const rangkumanTahunan: RangkumanDokumenLaporanTahunan[] = [
 
 export default function HomePage() {
   // Ambil tahun terbaru
-  const tahunTerbaru = Math.max(...rangkumanTahunan.map((d) => d.tahun));
-  const dokumenTerbaru = rangkumanTahunan.find((d) => d.tahun === tahunTerbaru);
+  const [rangkumanTahunanList, setRangkumanTahunanList] = useState<
+    RangkumanDokumenLaporanTahunan[]
+  >([]);
+  const tahunTerbaru = Math.max(...rangkumanTahunanList.map((d) => d.tahun));
+  const dokumenTerbaru = rangkumanTahunanList.find(
+    (d) => d.tahun === tahunTerbaru
+  );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const addRangkumanTahunanList = (
+    rangkumanTahunan: RangkumanDokumenLaporanTahunan
+  ) => {
+    alert(rangkumanTahunan.tahun);
+    setRangkumanTahunanList((prev) =>
+      prev.filter((d) => d.tahun !== rangkumanTahunan.tahun)
+    );
+  };
 
   // Ringkasan dokumen berdasarkan tahun terbaru
   const ringkasanDokumenTerbaru = [
@@ -104,6 +119,22 @@ export default function HomePage() {
       document.body.style.overflow = "auto";
     };
   }, [isModalOpen]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const data: RangkumanDokumenLaporanTahunan[] =
+          await getLast5YearsRangkuman(2023);
+        console.log(data);
+        setRangkumanTahunanList(data);
+      } catch (err) {
+        console.error("Gagal mengambil data Firestore:", err);
+      } finally {
+      }
+    };
+
+    fetchData();
+  }, []);
 
   return (
     <main className="min-h-screen bg-gradient-to-b flex flex-col">
@@ -207,7 +238,7 @@ export default function HomePage() {
               </tr>
             </thead>
             <tbody>
-              {rangkumanTahunan.map((r) => (
+              {rangkumanTahunanList.map((r) => (
                 <tr
                   key={r.id}
                   className="border-b hover:bg-blue-50/60 transition-colors"
@@ -247,6 +278,7 @@ export default function HomePage() {
         <TambahDokumenModal
           isModalOpen={isModalOpen}
           setIsModalOpen={setIsModalOpen}
+          addRangkumanTahunanList={addRangkumanTahunanList}
         />
       )}
 

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   DocumentTextIcon,
   EyeIcon,
@@ -16,28 +17,36 @@ import {
   StatusDokumenLaporan,
   DokumenLaporan,
 } from "@/app/_types/types";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { v4 } from "uuid";
+
+/**
+ * DashboardPage
+ * - membaca query `jenisLaporan` dan `tahun`
+ * - bila `jenisLaporan` adalah RAPERDA atau RAPERBUP:
+ *     -> set dokumen tersebut ke PROSES (sedang dibuat)
+ *     -> pasangan (PERDA / PERBUP) tetap BELUM_DIBUAT (tidak auto-start)
+ * - lainnya: tampilkan semua dokumen dalam status BELUM_DIBUAT
+ */
 
 export default function DashboardPage() {
-  const dokumenLaporanList: DokumenLaporan[] = [
+  const searchParams = useSearchParams();
+  const jenisLaporanParam = searchParams.get("jenisLaporan"); // ex: "Raperda" or "Raperbup"
+  const tahunParam = searchParams.get("tahun"); // ex: "2025"
+
+  const tahun = tahunParam
+    ? parseInt(tahunParam, 10)
+    : new Date().getFullYear();
+  const [documents, setDocuments] = useState<DokumenLaporan[]>([]);
+
+  // Template dasar semua dokumen (status default BELUM_DIBUAT)
+  const templateDokumenLaporanList: DokumenLaporan[] = [
     {
-      id: "1",
+      id: v4(),
       jenisLaporan: JenisLaporan.RAPERDA,
-      tahun: 2025,
-      nomor: 12,
-      tanggalPengesahan: "2025-03-01",
-      status: StatusDokumenLaporan.PROSES,
-      batangTubuh: null,
-      lampirans: [],
-      lampiransPendukung: [],
-      lastUpdated: "2025-10-20",
-    },
-    {
-      id: "2",
-      jenisLaporan: JenisLaporan.RAPERBUP,
-      tahun: 2025,
+      tahun,
       nomor: null,
-      tanggalPengesahan: "-",
+      tanggalPengesahan: null,
       status: StatusDokumenLaporan.BELUM_DIBUAT,
       batangTubuh: null,
       lampirans: [],
@@ -45,11 +54,35 @@ export default function DashboardPage() {
       lastUpdated: null,
     },
     {
-      id: "3",
-      jenisLaporan: JenisLaporan.PERDA,
-      tahun: 2025,
+      id: v4(),
+      jenisLaporan: JenisLaporan.RAPERBUP,
+      tahun,
       nomor: null,
-      tanggalPengesahan: "-",
+      tanggalPengesahan: null,
+      status: StatusDokumenLaporan.BELUM_DIBUAT,
+      batangTubuh: null,
+      lampirans: [],
+      lampiransPendukung: [],
+      lastUpdated: null,
+    },
+    {
+      id: v4(),
+      jenisLaporan: JenisLaporan.PERDA,
+      tahun,
+      nomor: null,
+      tanggalPengesahan: null,
+      status: StatusDokumenLaporan.BELUM_DIBUAT,
+      batangTubuh: null,
+      lampirans: [],
+      lampiransPendukung: [],
+      lastUpdated: null,
+    },
+    {
+      id: v4(),
+      jenisLaporan: JenisLaporan.PERBUP,
+      tahun,
+      nomor: null,
+      tanggalPengesahan: null,
       status: StatusDokumenLaporan.BELUM_DIBUAT,
       batangTubuh: null,
       lampirans: [],
@@ -58,7 +91,75 @@ export default function DashboardPage() {
     },
   ];
 
-  const [tahun, setTahun] = useState(2025);
+  // Format tanggal: "HH:mm, DD <Bulan> YYYY"
+  const formatTanggal = (isoString: string | null) => {
+    if (!isoString) return "-";
+    const d = new Date(isoString);
+    return d.toLocaleString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  useEffect(() => {
+    // jika tidak ada jenisLaporan di query => tampilkan template default (semua BELUM_DIBUAT)
+    if (!jenisLaporanParam) {
+      setDocuments(templateDokumenLaporanList);
+      return;
+    }
+
+    // normalisasi nilai param (toleransi casing)
+    const jenisNormalized = jenisLaporanParam.trim().toLowerCase();
+
+    // hanya respons untuk raperda atau raperbup
+    let startingJenis: JenisLaporan | null = null;
+    if (jenisNormalized === "raperda") startingJenis = JenisLaporan.RAPERDA;
+    else if (jenisNormalized === "raperbup")
+      startingJenis = JenisLaporan.RAPERBUP;
+
+    if (!startingJenis) {
+      // param tidak dikenal -> tampilkan default
+      setDocuments(templateDokumenLaporanList);
+      return;
+    }
+
+    // dokumen yang sedang dibuat = PROSES
+    const nowIso = new Date().toISOString();
+    const newDoc: DokumenLaporan = {
+      id: v4(),
+      jenisLaporan: startingJenis,
+      tahun,
+      nomor: null,
+      tanggalPengesahan: nowIso,
+      status: StatusDokumenLaporan.PROSES, // hanya dokumen awal diset PROSES
+      batangTubuh: null,
+      lampirans: [],
+      lampiransPendukung: [],
+      lastUpdated: nowIso,
+    };
+
+    // pasangan (follow-up) — TIDAK diubah ke PROSES: tetap BELUM_DIBUAT
+    // (explicit for clarity, but template already has BELUM_DIBUAT)
+    const followUp =
+      startingJenis === JenisLaporan.RAPERDA
+        ? JenisLaporan.PERDA
+        : startingJenis === JenisLaporan.RAPERBUP
+        ? JenisLaporan.PERBUP
+        : null;
+
+    // bangun array baru: ganti template entry yang sesuai dengan newDoc,
+    // sisanya tetap BELUM_DIBUAT (tidak otomatis dijalankan)
+    const updatedDocs = templateDokumenLaporanList.map((t) => {
+      if (t.jenisLaporan === newDoc.jenisLaporan) return newDoc;
+      // followUp stays BELUM_DIBUAT (so don't change it here)
+      return t;
+    });
+
+    setDocuments(updatedDocs);
+  }, [jenisLaporanParam, tahun]);
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
@@ -81,8 +182,8 @@ export default function DashboardPage() {
           </h1>
 
           {/* Ringkasan Dokumen */}
-          <section className="w-full mx-auto pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {dokumenLaporanList.map((doc) => {
+          <section className="w-full mx-auto pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {documents.map((doc) => {
               const statusColors = {
                 [StatusDokumenLaporan.SELESAI]:
                   "bg-green-100 text-green-700 border-green-200",
@@ -143,7 +244,7 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {dokumenLaporanList.map((doc) => {
+                {documents.map((doc) => {
                   const statusColor =
                     doc.status === StatusDokumenLaporan.SELESAI
                       ? "text-green-700"
@@ -168,7 +269,7 @@ export default function DashboardPage() {
                         {doc.status}
                       </td>
                       <td className="py-3 px-4">
-                        {doc.lastUpdated ? doc.lastUpdated : "-"}
+                        {formatTanggal(doc.lastUpdated)}
                       </td>
                       <td className="py-3 px-4 text-center flex justify-center gap-2">
                         <Link

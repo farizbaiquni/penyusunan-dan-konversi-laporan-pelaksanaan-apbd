@@ -4,24 +4,58 @@ import { useState } from "react";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { PlusCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { useRouter } from "next/navigation";
+import {
+  JenisLaporan,
+  RangkumanDokumenLaporanTahunan,
+  StatusDokumenLaporan,
+} from "@/app/_types/types";
 
 interface TambahDokumenModalProps {
   isModalOpen: boolean;
   setIsModalOpen: (v: boolean) => void;
+  addRangkumanTahunanList: (v: RangkumanDokumenLaporanTahunan) => void;
 }
 
 export default function TambahDokumenModal({
   isModalOpen,
   setIsModalOpen,
+  addRangkumanTahunanList,
 }: TambahDokumenModalProps) {
+  const router = useRouter();
   const [selectedYear, setSelectedYear] = useState<Date | null>(new Date());
-  const [jenisLaporan, setJenisLaporan] = useState<"Raperda" | "Raperbup">(
-    "Raperda"
+  const [jenisLaporan, setJenisLaporan] = useState<JenisLaporan>(
+    JenisLaporan.RAPERDA
   );
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedYear) return;
+
+    const year = selectedYear.getFullYear();
+
+    const newRangkumanTahunan: RangkumanDokumenLaporanTahunan = {
+      id: `tahun-${year}`,
+      tahun: year,
+      statusRaperda:
+        jenisLaporan === JenisLaporan.RAPERDA
+          ? StatusDokumenLaporan.PROSES
+          : StatusDokumenLaporan.BELUM_DIBUAT,
+      statusPerda: StatusDokumenLaporan.BELUM_DIBUAT,
+      statusRaperbup:
+        jenisLaporan === JenisLaporan.RAPERBUP
+          ? StatusDokumenLaporan.PROSES
+          : StatusDokumenLaporan.BELUM_DIBUAT,
+      statusPerbup: StatusDokumenLaporan.BELUM_DIBUAT,
+    };
+
+    addRangkumanTahunanList(newRangkumanTahunan);
+
+    // Navigasi dengan data dikirim via query string
+    router.push(
+      `/dashboard/${year}?jenisLaporan=${jenisLaporan}&tahun=${year}`
+    );
+
     setIsModalOpen(false);
   };
 
@@ -58,13 +92,19 @@ export default function TambahDokumenModal({
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Tahun
               </label>
-              <DatePicker
-                selected={selectedYear}
-                onChange={(date) => setSelectedYear(date)}
-                showYearPicker
-                dateFormat="yyyy"
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-              />
+              <div className="relative">
+                <DatePicker
+                  selected={selectedYear}
+                  onChange={(date) => setSelectedYear(date)}
+                  showYearPicker
+                  dateFormat="yyyy"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                />
+                {/* Icon di dalam border input */}
+                <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
+                  📅
+                </span>
+              </div>
             </div>
 
             {/* Jenis Laporan */}
@@ -75,12 +115,12 @@ export default function TambahDokumenModal({
               <select
                 value={jenisLaporan}
                 onChange={(e) =>
-                  setJenisLaporan(e.target.value as "Raperda" | "Raperbup")
+                  setJenisLaporan(e.target.value as JenisLaporan)
                 }
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
               >
-                <option value="Raperda">Raperda</option>
-                <option value="Raperbup">Raperbup</option>
+                <option value={JenisLaporan.RAPERDA}>Raperda</option>
+                <option value={JenisLaporan.RAPERBUP}>Raperbup</option>
               </select>
             </div>
 
