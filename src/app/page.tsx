@@ -7,13 +7,15 @@ import {
   DocumentTextIcon,
   EyeIcon,
 } from "@heroicons/react/24/outline";
-import Header from "./dashboard-laporan/components/header";
-import Footer from "./dashboard-laporan/components/footer";
+import Header from "./_components/header";
+import Footer from "./_components/footer";
 import {
   JenisLaporan,
   StatusDokumenLaporan,
   RangkumanDokumenLaporanTahunan,
 } from "./_types/types";
+import { useEffect, useState } from "react";
+import TambahDokumenModal from "./_components/modals/TambahDokumenModal";
 
 // ✅ Data ringkasan tahunan (tabel & ringkasan)
 const rangkumanTahunan: RangkumanDokumenLaporanTahunan[] = [
@@ -47,6 +49,8 @@ export default function HomePage() {
   // Ambil tahun terbaru
   const tahunTerbaru = Math.max(...rangkumanTahunan.map((d) => d.tahun));
   const dokumenTerbaru = rangkumanTahunan.find((d) => d.tahun === tahunTerbaru);
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Ringkasan dokumen berdasarkan tahun terbaru
   const ringkasanDokumenTerbaru = [
@@ -90,17 +94,28 @@ export default function HomePage() {
     }
   };
 
+  useEffect(() => {
+    if (isModalOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+    return () => {
+      document.body.style.overflow = "auto";
+    };
+  }, [isModalOpen]);
+
   return (
     <main className="min-h-screen bg-gradient-to-b flex flex-col">
       <Header
         rightContent={
-          <Link
-            href="/raperda/new"
-            className="flex items-center text-sm gap-2 bg-blue-600 text-white font-medium px-4 py-1.5 rounded-lg hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm"
+          <div
+            onClick={() => setIsModalOpen(true)}
+            className="flex cursor-pointer items-center text-sm gap-2 bg-blue-600 text-white font-medium px-4 py-1.5 rounded-lg hover:bg-blue-700 active:scale-[0.98] transition-all shadow-sm"
           >
             <PlusCircleIcon className="w-5 h-5" />
             Tambah Dokumen
-          </Link>
+          </div>
         }
       />
 
@@ -226,6 +241,14 @@ export default function HomePage() {
           </table>
         </section>
       </div>
+
+      {/* Modal */}
+      {isModalOpen && (
+        <TambahDokumenModal
+          isModalOpen={isModalOpen}
+          setIsModalOpen={setIsModalOpen}
+        />
+      )}
 
       <Footer />
     </main>

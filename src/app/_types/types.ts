@@ -7,6 +7,7 @@ export interface DokumenLaporan {
   status: StatusDokumenLaporan;
   batangTubuh: string | null;
   lampirans: LampiranDataUtama[];
+  lastUpdated: string | null;
   lampiransPendukung: LampiranDataPendukung[];
 }
 

@@ -13,14 +13,16 @@ interface HeaderProps {
  */
 export default function Header({ rightContent }: HeaderProps) {
   return (
-    <header className="bg-white/80 backdrop-blur-md border-b border-blue-100 shadow-sm">
+    <header className="bg-blue-900 backdrop-blur-md border-b border-blue-100 shadow-sm">
       <div className="max-w-7xl mx-auto px-16 py-2 flex justify-between items-center">
         {/* Kiri: Logo dan judul */}
         <div className="flex items-center gap-3">
           <Image src="/images/bank.png" alt="Logo" width={40} height={40} />
-          <div>
-            <h1 className="text-lg font-semibold text-gray-800">Tuntas</h1>
-            <p className="text-sm text-gray-500">
+          <div className="">
+            <h1 className="text-lg font-bold text-gray-200 mb-[-3px]">
+              TUNTAS
+            </h1>
+            <p className="text-sm text-gray-200">
               Tata Kelola Naskah Pertanggungjawaban Pelaksanaan Terotomatisasi
               dan Sistematis
             </p>
