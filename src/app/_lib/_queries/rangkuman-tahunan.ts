@@ -26,9 +26,8 @@ export async function getLast5YearsRangkuman(
 
   return querySnap.docs.map((docSnap) => {
     const data = docSnap.data();
-    console.log(data);
     return {
-      id: docSnap.id, // ✅ Gunakan docSnap.id (lebih aman dari data.id)
+      id: docSnap.id,
       tahun: data.tahun,
       statusRaperda: data.statusRaperda,
       statusPerda: data.statusPerda,

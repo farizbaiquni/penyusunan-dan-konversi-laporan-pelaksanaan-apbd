@@ -67,7 +67,8 @@ export default function MenuInformasiLaporan({
         {/* HEADER */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 capitalize">
-            🗂️ Informasi Laporan {generateTextJenisLaporan(jenisLaporan)}
+            🗂️ Informasi Laporan {generateTextJenisLaporan(jenisLaporan)} Tahun{" "}
+            {tahun}
           </h2>
         </div>
 
@@ -147,19 +148,27 @@ export default function MenuInformasiLaporan({
               value={`${jumlahLampiranPendukung} dokumen`}
               icon="📎"
             />
-            <StatusCard isUpload={isUploadBatangTubuh} />
-            <InfoCard
-              label={`Nomor ${generateTextJenisLaporan(jenisLaporan)}`}
-              value={inputNomor ? `No. ${inputNomor}` : "Belum ditentukan"}
-              icon="🧾"
-              muted={!inputNomor}
-            />
-            <InfoCard label="Nama Bupati" value={inputNama} icon="🏛️" />
+            {jenisLaporan !== JenisLaporan.RAPERDA &&
+              jenisLaporan !== JenisLaporan.RAPERBUP && (
+                <>
+                  <StatusCard isUpload={isUploadBatangTubuh} />
+                  <InfoCard
+                    label={`Nomor ${generateTextJenisLaporan(jenisLaporan)}`}
+                    value={
+                      inputNomor ? `No. ${inputNomor}` : "Belum ditentukan"
+                    }
+                    icon="🧾"
+                    muted={!inputNomor}
+                  />
+                </>
+              )}
+
+            {/* <InfoCard label="Nama Bupati" value={inputNama} icon="🏛️" />
             <InfoCard
               label={`Tahun  ${generateTextJenisLaporan(jenisLaporan)}`}
               value={`${inputTahun}`}
               icon="📅"
-            />
+            /> */}
           </div>
         </section>
       </div>

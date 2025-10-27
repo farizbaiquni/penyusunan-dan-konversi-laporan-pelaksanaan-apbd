@@ -8,17 +8,22 @@ import {
   BabCalk,
   JenisLaporan,
   LampiranDataUtama,
+  LampiranDataUtamaFirestore,
   MenuOption,
 } from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
 import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 import { v4 } from "uuid";
+import { addLampiranUtamaFirestore } from "@/app/_lib/_queries/lampiran";
+import LoadingProcessing from "@/app/_components/LoadingProcessing";
 
 interface TambahLampiranProps {
   jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
   onAddLampiran: (data: LampiranDataUtama) => void;
   urutanLampiran: number;
+  tahun: number;
+  dokumenIdFirestore: string;
 }
 
 export default function MenuTambahLampiran({
@@ -26,7 +31,10 @@ export default function MenuTambahLampiran({
   setActiveMenu,
   onAddLampiran,
   urutanLampiran,
+  tahun,
+  dokumenIdFirestore,
 }: TambahLampiranProps) {
+  const [isLoadingSaving, setIsLoadingSaving] = useState(false);
   const [romawiLampiran, setRomawiLampiran] = useState("");
   const [judulPembatasLampiran, setJudulPembatasLampiran] = useState("");
   const [footerText, setFooterText] = useState("");
@@ -103,6 +111,8 @@ export default function MenuTambahLampiran({
     if (!file || !fileDataRef.current)
       return alert("Unggah file PDF terlebih dahulu!");
 
+    setIsLoadingSaving(true); // mulai loading
+
     try {
       const pdfDoc = await PDFDocument.load(fileDataRef.current);
       const jumlahHalaman = pdfDoc.getPageCount();
@@ -114,10 +124,28 @@ export default function MenuTambahLampiran({
         return alert("Jumlah halaman CALK melebihi total halaman file PDF!");
       }
 
-      const newLampiran: LampiranDataUtama = {
-        id: v4(),
+      // ----- BAGIAN PENTING: KIRIM FILE KE API -----
+      const namaFile = v4();
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tahun", tahun.toString()); // atau dari state
+      formData.append("jenisLaporan", jenisLaporan);
+      formData.append("namaFile", namaFile);
+
+      const res = await fetch("/api/save-lampiran-utama", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      // ----- TAMBAHKAN KE STATE LAMPIRAN UTAMA -----
+      const newLampiranFirestore: LampiranDataUtamaFirestore = {
+        id: namaFile,
         urutan: urutanLampiran + 1,
-        file,
+        namaFileAsli: file.name,
+        namaFileDiStorageLokal: namaFile,
         romawiLampiran,
         judulPembatasLampiran,
         footerText,
@@ -127,17 +155,48 @@ export default function MenuTambahLampiran({
         fontSize: footer.fontSize,
         footerHeight: footer.height,
         jumlahHalaman: isCALK ? halamanTerakhirCALK : jumlahHalaman,
-        isCALK: isCALK,
+        isCALK,
         babs: babCALK,
         jumlahTotalLembar: jumlahHalaman,
       };
-      onAddLampiran(newLampiran);
 
-      alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
+      // ----- SIMPAN KE FIRESTORE -----
+      const firestoreResult = await addLampiranUtamaFirestore(
+        dokumenIdFirestore,
+        newLampiranFirestore,
+        isCALK
+      );
+
+      const newLampiran: LampiranDataUtama = {
+        id: namaFile,
+        urutan: urutanLampiran + 1,
+        file: file,
+        romawiLampiran,
+        judulPembatasLampiran,
+        footerText,
+        footerWidth: footer.width,
+        footerX: footer.x,
+        footerY: footer.y,
+        fontSize: footer.fontSize,
+        footerHeight: footer.height,
+        jumlahHalaman: isCALK ? halamanTerakhirCALK : jumlahHalaman,
+        isCALK,
+        babs: babCALK,
+        jumlahTotalLembar: jumlahHalaman,
+      };
+
+      if (!firestoreResult.success)
+        throw new Error("Gagal menyimpan ke Firestore");
+
+      // ----- SIMPAN KE VARIABLE -----
+      onAddLampiran(newLampiran);
+      alert(`Lampiran "${file.name}" berhasil ditambahkan dan disimpan`);
       setActiveMenu(MenuOption.LAMPIRAN_UTAMA);
     } catch (err) {
       console.error(err);
-      alert("Gagal menyimpan lampiran.");
+      alert("Gagal menyimpan lampiran: " + err);
+    } finally {
+      setIsLoadingSaving(false); // selesai loading
     }
   };
 
@@ -316,6 +375,8 @@ export default function MenuTambahLampiran({
           onAddLampiranUtamaCALK={onAddLampiranUtamaCALK}
         />
       )}
+
+      {isLoadingSaving && <LoadingProcessing message="Menyimpan lampiran..." />}
     </div>
   );
 }

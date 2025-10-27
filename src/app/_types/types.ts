@@ -1,3 +1,5 @@
+import { Timestamp } from "firebase/firestore";
+
 export enum JenisLaporan {
   RAPERDA = "raperda",
   RAPERBUP = "raperbup",
@@ -7,8 +9,7 @@ export enum JenisLaporan {
 
 export enum StatusDokumenLaporan {
   BELUM_DIBUAT = "belum dibuat",
-  PROSES = "proses",
-  SELESAI = "selesai",
+  DIBUAT = "dibuat",
 }
 
 export enum MenuOption {
@@ -47,10 +48,40 @@ export interface DokumenLaporan {
   lampiransPendukung: LampiranDataPendukung[];
 }
 
+export interface DokumenLaporanFirestore {
+  id: string;
+  jenisLaporan: JenisLaporan;
+  tahun: number;
+  nomor: number | null;
+  tanggalPengesahan: Date | null;
+  status: StatusDokumenLaporan;
+  batangTubuh: string | null;
+  lastUpdated: Timestamp | null;
+}
+
 export interface LampiranDataUtama {
   id: string;
   urutan: number;
   file: File;
+  romawiLampiran: string;
+  judulPembatasLampiran: string;
+  footerText: string;
+  footerWidth: number;
+  footerX: number;
+  footerY: number;
+  fontSize: number;
+  footerHeight: number;
+  jumlahHalaman: number;
+  isCALK: boolean;
+  babs?: BabCalk[];
+  jumlahTotalLembar: number;
+}
+
+export interface LampiranDataUtamaFirestore {
+  id: string;
+  urutan: number;
+  namaFileAsli: string;
+  namaFileDiStorageLokal: string;
   romawiLampiran: string;
   judulPembatasLampiran: string;
   footerText: string;

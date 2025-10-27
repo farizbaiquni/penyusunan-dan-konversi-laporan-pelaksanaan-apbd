@@ -15,6 +15,7 @@ import {
   MenuOption,
 } from "@/app/_types/types";
 import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
+import LoadingProcessing from "@/app/_components/LoadingProcessing";
 
 /* ============================================================
    INTERFACE
@@ -39,6 +40,7 @@ export default function MenuLampiran({
   updateLampiranOrder,
   handleOnClickEditLampiran,
 }: LampiranManagerProps) {
+  const [isLoadingDelete, setIsLoadingDelete] = useState();
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<LampiranDataUtama[]>([]);
@@ -146,9 +148,9 @@ export default function MenuLampiran({
                   <td className="px-4 py-2 text-center">{i + 1}</td>
                   <td
                     className="px-4 py-2 truncate max-w-[180px]"
-                    title={l.file.name}
+                    title={l.file?.name}
                   >
-                    {l.file.name}
+                    {l.file?.name}
                   </td>
                   <td className="px-4 py-2 text-center font-semibold text-blue-600">
                     {l.romawiLampiran}
@@ -157,14 +159,14 @@ export default function MenuLampiran({
                   <td className="px-4 py-2 text-center">{l.jumlahHalaman}</td>
                   <td className="px-4 py-2">{l.jumlahTotalLembar}</td>
                   <td className="px-4 py-2 text-center">
-                    {formatFileSize(l.file.size)}
+                    {formatFileSize(l.file?.size)}
                   </td>
                   <td className="px-4 py-2 text-center">
                     <div className="flex justify-center gap-2">
                       {/* Preview */}
                       <button
                         onClick={() => handlePreview(l.file)}
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-700 transition font-medium"
+                        className="flex items-center hover:underline cursor-pointer gap-1 text-blue-600 hover:text-blue-700 transition font-medium"
                       >
                         <EyeIcon className="w-4 h-4" />
                         <span>Preview</span>
@@ -174,7 +176,7 @@ export default function MenuLampiran({
                       <button
                         title="Edit Lampiran"
                         onClick={() => handleOnClickEditLampiran(l)}
-                        className="flex items-center gap-1 text-yellow-600 hover:text-yellow-700 transition font-medium"
+                        className="flex hover:underline cursor-pointer items-center gap-1 text-yellow-600 hover:text-yellow-700 transition font-medium"
                       >
                         <Cog6ToothIcon className="w-4 h-4" />
                         <span>Edit</span>
@@ -183,7 +185,7 @@ export default function MenuLampiran({
                       {/* Hapus */}
                       <button
                         onClick={() => onDeleteLampiran(l.id)}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-700 transition font-medium"
+                        className="flex hover:underline cursor-pointer items-center gap-1 text-red-600 hover:text-red-700 transition font-medium"
                       >
                         <TrashIcon className="w-4 h-4" />
                         <span>Hapus</span>
@@ -211,6 +213,7 @@ export default function MenuLampiran({
       {previewURL && (
         <PreviewModal pdfURL={previewURL} onClose={() => setPreviewURL(null)} />
       )}
+      {isLoadingDelete && <LoadingProcessing message="Menghapus lampiran..." />}
     </div>
   );
 }

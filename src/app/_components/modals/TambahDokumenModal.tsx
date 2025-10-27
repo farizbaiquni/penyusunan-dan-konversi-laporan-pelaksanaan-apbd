@@ -6,10 +6,22 @@ import "react-datepicker/dist/react-datepicker.css";
 import { PlusCircleIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/navigation";
 import {
+  DokumenLaporanFirestore,
   JenisLaporan,
   RangkumanDokumenLaporanTahunan,
   StatusDokumenLaporan,
 } from "@/app/_types/types";
+import { db } from "@/app/_lib/firebase";
+import {
+  collection,
+  doc,
+  setDoc,
+  query,
+  where,
+  getDocs,
+  Timestamp,
+} from "firebase/firestore";
+import { getJenisLaporanfromString } from "@/app/_utils/general";
 
 interface TambahDokumenModalProps {
   isModalOpen: boolean;
@@ -27,36 +39,100 @@ export default function TambahDokumenModal({
   const [jenisLaporan, setJenisLaporan] = useState<JenisLaporan>(
     JenisLaporan.RAPERDA
   );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedYear) return;
 
     const year = selectedYear.getFullYear();
 
-    const newRangkumanTahunan: RangkumanDokumenLaporanTahunan = {
-      id: `tahun-${year}`,
-      tahun: year,
-      statusRaperda:
-        jenisLaporan === JenisLaporan.RAPERDA
-          ? StatusDokumenLaporan.PROSES
-          : StatusDokumenLaporan.BELUM_DIBUAT,
-      statusPerda: StatusDokumenLaporan.BELUM_DIBUAT,
-      statusRaperbup:
-        jenisLaporan === JenisLaporan.RAPERBUP
-          ? StatusDokumenLaporan.PROSES
-          : StatusDokumenLaporan.BELUM_DIBUAT,
-      statusPerbup: StatusDokumenLaporan.BELUM_DIBUAT,
-    };
+    setIsSubmitting(true);
 
-    addRangkumanTahunanList(newRangkumanTahunan);
+    try {
+      // 1️⃣ Cek apakah dokumen sudah ada
+      const q = query(
+        collection(db, "dokumenLaporan"),
+        where("tahun", "==", year),
+        where("jenisLaporan", "==", jenisLaporan.toLowerCase())
+      );
+      const snap = await getDocs(q);
 
-    // Navigasi dengan data dikirim via query string
-    router.push(
-      `/dashboard/${year}?jenisLaporan=${jenisLaporan}&tahun=${year}`
-    );
+      if (!snap.empty) {
+        alert(`Dokumen ${jenisLaporan} untuk tahun ${year} sudah ada.`);
+        setIsSubmitting(false);
+        return;
+      }
 
-    setIsModalOpen(false);
+      // 2️⃣ Buat dokumen baru
+      const docRef = doc(collection(db, "dokumenLaporan"));
+      const documentLaporan: DokumenLaporanFirestore = {
+        id: docRef.id,
+        jenisLaporan: getJenisLaporanfromString(jenisLaporan.toLowerCase()),
+        tahun: year,
+        nomor: null,
+        tanggalPengesahan: null,
+        status: StatusDokumenLaporan.DIBUAT,
+        batangTubuh: null,
+        lastUpdated: Timestamp.now(),
+      };
+
+      await setDoc(docRef, documentLaporan);
+
+      // 3️⃣ Update atau buat rangkuman tahunan
+      const rangkumanRef = doc(
+        db,
+        "rangkumanDokumenLaporanTahunan",
+        `tahun-${year}`
+      );
+
+      // Ambil rangkuman tahun jika ada
+      const rangkumanSnap = await getDocs(
+        query(
+          collection(db, "rangkumanDokumenLaporanTahunan"),
+          where("tahun", "==", year)
+        )
+      );
+
+      let newRangkuman: RangkumanDokumenLaporanTahunan = {
+        id: `tahun-${year}`,
+        tahun: year,
+        statusRaperda: StatusDokumenLaporan.BELUM_DIBUAT,
+        statusPerda: StatusDokumenLaporan.BELUM_DIBUAT,
+        statusRaperbup: StatusDokumenLaporan.BELUM_DIBUAT,
+        statusPerbup: StatusDokumenLaporan.BELUM_DIBUAT,
+      };
+
+      if (!rangkumanSnap.empty) {
+        // Jika rangkuman sudah ada, ambil datanya dan update status sesuai jenis laporan
+        const data = rangkumanSnap.docs[0].data();
+        newRangkuman = {
+          ...newRangkuman,
+          ...data,
+        };
+      }
+
+      if (jenisLaporan === JenisLaporan.RAPERDA)
+        newRangkuman.statusRaperda = StatusDokumenLaporan.DIBUAT;
+      if (jenisLaporan === JenisLaporan.RAPERBUP)
+        newRangkuman.statusRaperbup = StatusDokumenLaporan.DIBUAT;
+
+      // Simpan rangkuman ke Firestore (merge supaya tidak menimpa field lain)
+      await setDoc(rangkumanRef, newRangkuman, { merge: true });
+
+      // 4️⃣ Update state parent agar tabel langsung berubah
+      addRangkumanTahunanList(newRangkuman);
+
+      alert(`Dokumen ${jenisLaporan} untuk tahun ${year} berhasil dibuat!`);
+
+      // Navigasi dengan data dikirim via query string
+      router.push(`/dashboard/${year}?&tahun=${year}`);
+    } catch (err) {
+      console.error(err);
+      alert("Gagal membuat dokumen. Cek console untuk detail.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (!isModalOpen) return null;
@@ -80,12 +156,10 @@ export default function TambahDokumenModal({
             <XMarkIcon className="w-6 h-6" />
           </button>
 
-          {/* Judul Modal */}
           <h2 className="text-xl font-bold text-gray-800 mb-6">
             Tambah Dokumen Baru
           </h2>
 
-          {/* Form */}
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
             {/* Year Picker */}
             <div>
@@ -99,8 +173,8 @@ export default function TambahDokumenModal({
                   showYearPicker
                   dateFormat="yyyy"
                   className="w-full border border-gray-300 rounded-md px-3 py-2 pr-10 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  disabled={isSubmitting}
                 />
-                {/* Icon di dalam border input */}
                 <span className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none">
                   📅
                 </span>
@@ -118,6 +192,7 @@ export default function TambahDokumenModal({
                   setJenisLaporan(e.target.value as JenisLaporan)
                 }
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                disabled={isSubmitting}
               >
                 <option value={JenisLaporan.RAPERDA}>Raperda</option>
                 <option value={JenisLaporan.RAPERBUP}>Raperbup</option>
@@ -127,10 +202,11 @@ export default function TambahDokumenModal({
             {/* Submit */}
             <button
               type="submit"
-              className="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-md mt-2"
+              className="flex items-center justify-center gap-2 bg-blue-600 text-white font-semibold px-4 py-2 rounded-lg hover:bg-blue-700 transition-all shadow-md mt-2 disabled:opacity-60 disabled:cursor-not-allowed"
+              disabled={isSubmitting}
             >
               <PlusCircleIcon className="w-5 h-5" />
-              Tambah Dokumen
+              {isSubmitting ? "Menyimpan..." : "Tambah Dokumen"}
             </button>
           </form>
         </div>

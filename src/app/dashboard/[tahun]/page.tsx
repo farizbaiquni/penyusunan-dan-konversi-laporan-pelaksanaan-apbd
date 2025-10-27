@@ -19,27 +19,22 @@ import {
 } from "@/app/_types/types";
 import { useEffect, useState } from "react";
 import { v4 } from "uuid";
-
-/**
- * DashboardPage
- * - membaca query `jenisLaporan` dan `tahun`
- * - bila `jenisLaporan` adalah RAPERDA atau RAPERBUP:
- *     -> set dokumen tersebut ke PROSES (sedang dibuat)
- *     -> pasangan (PERDA / PERBUP) tetap BELUM_DIBUAT (tidak auto-start)
- * - lainnya: tampilkan semua dokumen dalam status BELUM_DIBUAT
- */
+import { getDokumenLaporanByTahun } from "@/app/_lib/_queries/dokument-laporan";
+import { useRouter } from "next/navigation";
 
 export default function DashboardPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const jenisLaporanParam = searchParams.get("jenisLaporan"); // ex: "Raperda" or "Raperbup"
-  const tahunParam = searchParams.get("tahun"); // ex: "2025"
+  const tahunParam = searchParams.get("tahun");
+  const jenisLaporanParam = searchParams.get("jenis-laporan");
 
   const tahun = tahunParam
     ? parseInt(tahunParam, 10)
     : new Date().getFullYear();
-  const [documents, setDocuments] = useState<DokumenLaporan[]>([]);
 
-  // Template dasar semua dokumen (status default BELUM_DIBUAT)
+  const [documents, setDocuments] = useState<DokumenLaporan[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const templateDokumenLaporanList: DokumenLaporan[] = [
     {
       id: v4(),
@@ -91,75 +86,61 @@ export default function DashboardPage() {
     },
   ];
 
-  // Format tanggal: "HH:mm, DD <Bulan> YYYY"
-  const formatTanggal = (isoString: string | null) => {
-    if (!isoString) return "-";
-    const d = new Date(isoString);
-    return d.toLocaleString("id-ID", {
+  function formatTanggal(
+    dateValue: Date | { toDate?: () => Date } | null
+  ): string {
+    if (!dateValue) return "-";
+
+    // Jika Firestore Timestamp, ubah ke Date
+    const dateObj =
+      typeof (dateValue as { toDate?: () => Date }).toDate === "function"
+        ? (dateValue as { toDate: () => Date }).toDate()
+        : (dateValue as Date);
+
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-    });
-  };
-
-  useEffect(() => {
-    // jika tidak ada jenisLaporan di query => tampilkan template default (semua BELUM_DIBUAT)
-    if (!jenisLaporanParam) {
-      setDocuments(templateDokumenLaporanList);
-      return;
-    }
-
-    // normalisasi nilai param (toleransi casing)
-    const jenisNormalized = jenisLaporanParam.trim().toLowerCase();
-
-    // hanya respons untuk raperda atau raperbup
-    let startingJenis: JenisLaporan | null = null;
-    if (jenisNormalized === "raperda") startingJenis = JenisLaporan.RAPERDA;
-    else if (jenisNormalized === "raperbup")
-      startingJenis = JenisLaporan.RAPERBUP;
-
-    if (!startingJenis) {
-      // param tidak dikenal -> tampilkan default
-      setDocuments(templateDokumenLaporanList);
-      return;
-    }
-
-    // dokumen yang sedang dibuat = PROSES
-    const nowIso = new Date().toISOString();
-    const newDoc: DokumenLaporan = {
-      id: v4(),
-      jenisLaporan: startingJenis,
-      tahun,
-      nomor: null,
-      tanggalPengesahan: nowIso,
-      status: StatusDokumenLaporan.PROSES, // hanya dokumen awal diset PROSES
-      batangTubuh: null,
-      lampirans: [],
-      lampiransPendukung: [],
-      lastUpdated: nowIso,
+      second: "2-digit",
+      hour12: false,
     };
 
-    // pasangan (follow-up) — TIDAK diubah ke PROSES: tetap BELUM_DIBUAT
-    // (explicit for clarity, but template already has BELUM_DIBUAT)
-    const followUp =
-      startingJenis === JenisLaporan.RAPERDA
-        ? JenisLaporan.PERDA
-        : startingJenis === JenisLaporan.RAPERBUP
-        ? JenisLaporan.PERBUP
-        : null;
+    const formattedString = dateObj.toLocaleString("id-ID", options);
 
-    // bangun array baru: ganti template entry yang sesuai dengan newDoc,
-    // sisanya tetap BELUM_DIBUAT (tidak otomatis dijalankan)
-    const updatedDocs = templateDokumenLaporanList.map((t) => {
-      if (t.jenisLaporan === newDoc.jenisLaporan) return newDoc;
-      // followUp stays BELUM_DIBUAT (so don't change it here)
-      return t;
-    });
+    // sedikit rapikan agar hasilnya mirip format umum: "Senin, 26 Oktober 2025 14:33:21"
+    const result = formattedString.replace(" pukul ", " ").replace(", ", ", ");
+    return result;
+  }
 
-    setDocuments(updatedDocs);
-  }, [jenisLaporanParam, tahun]);
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+      try {
+        const fetchedDocs = await getDokumenLaporanByTahun(tahun);
+
+        // Merge dengan template agar semua jenis laporan muncul
+        const merged = templateDokumenLaporanList.map((tpl) => {
+          const found = fetchedDocs.find(
+            (f) =>
+              f.jenisLaporan.toLowerCase() === tpl.jenisLaporan.toLowerCase()
+          );
+          return found || tpl;
+        });
+
+        setDocuments(merged);
+      } catch (err) {
+        console.error("🔥 Gagal memuat dokumen:", err);
+        setDocuments(templateDokumenLaporanList);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchData();
+  }, [tahun]);
 
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col">
@@ -181,146 +162,147 @@ export default function DashboardPage() {
             DOKUMEN LAPORAN PERTANGGUNGJAWABAN APBD TAHUN {tahun}
           </h1>
 
-          {/* Ringkasan Dokumen */}
-          <section className="w-full mx-auto pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            {documents.map((doc) => {
-              const statusColors = {
-                [StatusDokumenLaporan.SELESAI]:
-                  "bg-green-100 text-green-700 border-green-200",
-                [StatusDokumenLaporan.PROSES]:
-                  "bg-yellow-100 text-yellow-700 border-yellow-200",
-                [StatusDokumenLaporan.BELUM_DIBUAT]:
-                  "bg-red-100 text-red-600 border-red-200",
-              } as const;
-
-              const Icon = DocumentTextIcon;
-              const statusClass = statusColors[doc.status];
-
-              return (
-                <div
-                  key={doc.id}
-                  className="group relative bg-white border border-gray-100 rounded-md px-6 py-3 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden"
-                >
-                  <div className="absolute top-0 right-0 h-full w-1 bg-gradient-to-b from-blue-500 to-blue-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-blue-50 rounded-md group-hover:bg-blue-100 transition-colors duration-300">
-                      <Icon className="w-8 h-8 text-blue-700" />
-                    </div>
-                    <div>
-                      <h3 className="text-md font-semibold text-gray-800 group-hover:text-blue-700 transition-colors duration-300">
-                        {doc.jenisLaporan.toUpperCase()}
-                      </h3>
-                      <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-2xl text-xs font-medium border ${statusClass}`}
-                      >
-                        {doc.status === StatusDokumenLaporan.SELESAI && "✅"}
-                        {doc.status === StatusDokumenLaporan.PROSES && "🕓"}
-                        {doc.status === StatusDokumenLaporan.BELUM_DIBUAT &&
-                          "❌"}
-                        {doc.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </section>
-
-          {/* Tabel File */}
-          <section className="bg-white border border-gray-100 rounded-md shadow-md overflow-x-auto p-6">
-            <h3 className="font-semibold text-gray-800 mb-6">
-              File Dokumen Detail
-            </h3>
-            <table className="min-w-full text-sm text-gray-700 border-collapse outline-1 outline-gray-500">
-              <thead>
-                <tr className="bg-gray-700 border-b border-gray-500 text-gray-200">
-                  <th className="py-3 px-4 text-left font-semibold">Jenis</th>
-                  <th className="py-3 px-4 text-left font-semibold">Status</th>
-                  <th className="py-3 px-4 text-left font-semibold">
-                    Update Terakhir
-                  </th>
-                  <th className="py-3 px-4 text-center font-semibold">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
+          {loading ? (
+            <div className="text-gray-500 text-center py-10">
+              🔄 Memuat data dari Firestore...
+            </div>
+          ) : (
+            <>
+              {/* Ringkasan Dokumen */}
+              <section className="w-full mx-auto pb-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {documents.map((doc) => {
-                  const statusColor =
-                    doc.status === StatusDokumenLaporan.SELESAI
-                      ? "text-green-700"
-                      : doc.status === StatusDokumenLaporan.PROSES
-                      ? "text-yellow-700"
-                      : "text-red-600";
+                  const statusColors = {
+                    [StatusDokumenLaporan.DIBUAT]:
+                      "bg-green-100 text-green-700 border-green-200",
+                    [StatusDokumenLaporan.BELUM_DIBUAT]:
+                      "bg-red-100 text-red-600 border-red-200",
+                  } as const;
 
-                  const isDisabled =
-                    doc.status === StatusDokumenLaporan.BELUM_DIBUAT;
+                  const Icon = DocumentTextIcon;
+                  const statusClass = statusColors[doc.status];
 
                   return (
-                    <tr
+                    <div
                       key={doc.id}
-                      className={`border-b ${
-                        !isDisabled ? "hover:bg-blue-50" : "bg-gray-50/50"
-                      } transition`}
+                      className="group relative bg-white border border-gray-100 rounded-md px-6 py-3 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300 overflow-hidden"
                     >
-                      <td className="py-3 px-4 font-medium">
-                        {doc.jenisLaporan.toUpperCase()}
-                      </td>
-                      <td className={`py-3 px-4 ${statusColor}`}>
-                        {doc.status}
-                      </td>
-                      <td className="py-3 px-4">
-                        {formatTanggal(doc.lastUpdated)}
-                      </td>
-                      <td className="py-3 px-4 text-center flex justify-center gap-2">
-                        <Link
-                          href={
-                            !isDisabled
-                              ? `/${doc.jenisLaporan.toLowerCase()}/${tahun}/view`
-                              : "#"
-                          }
-                          className={`p-2 rounded-lg transition ${
-                            isDisabled
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-blue-50 text-blue-700 hover:bg-blue-100"
-                          }`}
-                          aria-disabled={isDisabled}
-                        >
-                          <EyeIcon className="w-5 h-5" />
-                        </Link>
+                      <div className="absolute top-0 right-0 h-full w-1 bg-gradient-to-b from-blue-500 to-blue-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-                        <Link
-                          href={
-                            !isDisabled
-                              ? `/${doc.jenisLaporan.toLowerCase()}/${tahun}/edit`
-                              : "#"
-                          }
-                          className={`p-2 rounded-lg transition ${
-                            isDisabled
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
-                          }`}
-                          aria-disabled={isDisabled}
-                        >
-                          <PencilIcon className="w-5 h-5" />
-                        </Link>
-
-                        <button
-                          disabled={isDisabled}
-                          className={`p-2 rounded-lg transition ${
-                            isDisabled
-                              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                              : "bg-green-50 text-green-700 hover:bg-green-100"
-                          }`}
-                        >
-                          <ArrowDownTrayIcon className="w-5 h-5" />
-                        </button>
-                      </td>
-                    </tr>
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-blue-50 rounded-md group-hover:bg-blue-100 transition-colors duration-300">
+                          <Icon className="w-8 h-8 text-blue-700" />
+                        </div>
+                        <div>
+                          <h3 className="text-md font-semibold text-gray-800 group-hover:text-blue-700 transition-colors duration-300">
+                            {doc.jenisLaporan.toUpperCase()}
+                          </h3>
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-2xl text-xs font-medium border ${statusClass}`}
+                          >
+                            {doc.status === StatusDokumenLaporan.DIBUAT && "✅"}
+                            {doc.status === StatusDokumenLaporan.BELUM_DIBUAT &&
+                              "❌"}
+                            {doc.status}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   );
                 })}
-              </tbody>
-            </table>
-          </section>
+              </section>
+
+              {/* Tabel File */}
+              <section className="bg-white border border-gray-100 rounded-md shadow-md overflow-x-auto p-6">
+                <h3 className="font-semibold text-gray-800 mb-6">
+                  File Dokumen Detail
+                </h3>
+                <table className="min-w-full text-sm text-gray-700 border-collapse outline-1 outline-gray-500">
+                  <thead>
+                    <tr className="bg-gray-700 border-b border-gray-500 text-gray-200">
+                      <th className="py-3 px-4 text-left font-semibold">
+                        Jenis
+                      </th>
+                      <th className="py-3 px-4 text-left font-semibold">
+                        Status
+                      </th>
+                      <th className="py-3 px-4 text-left font-semibold">
+                        Update Terakhir
+                      </th>
+                      <th className="py-3 px-4 text-center font-semibold">
+                        Aksi
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {documents.map((doc) => {
+                      const statusColor =
+                        doc.status === StatusDokumenLaporan.DIBUAT
+                          ? "text-green-700"
+                          : "text-red-600";
+
+                      const isDisabled =
+                        doc.status === StatusDokumenLaporan.BELUM_DIBUAT;
+
+                      return (
+                        <tr
+                          key={doc.id}
+                          className={`border-b ${
+                            !isDisabled ? "hover:bg-blue-50" : "bg-gray-50/50"
+                          } transition`}
+                        >
+                          <td className="py-3 px-4 font-medium">
+                            {doc.jenisLaporan.toUpperCase()}
+                          </td>
+                          <td className={`py-3 px-4 ${statusColor}`}>
+                            {doc.status}
+                          </td>
+                          <td className="py-3 px-4">
+                            {formatTanggal(doc.lastUpdated)}
+                          </td>
+                          <td className="py-3 px-4 text-center flex justify-center gap-2">
+                            <Link
+                              href={"#"}
+                              className={`p-2 rounded-lg transition ${
+                                isDisabled
+                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                  : "bg-blue-50 text-blue-700 hover:bg-blue-100"
+                              }`}
+                              aria-disabled={isDisabled}
+                            >
+                              <EyeIcon className="w-5 h-5" />
+                            </Link>
+
+                            <Link
+                              href={`/dashboard-laporan?tahun=${tahunParam}&jenis-laporan=${doc.jenisLaporan}`}
+                              className={`p-2 rounded-lg transition ${
+                                isDisabled
+                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                  : "bg-yellow-50 text-yellow-700 hover:bg-yellow-100"
+                              }`}
+                              aria-disabled={isDisabled}
+                            >
+                              <PencilIcon className="w-5 h-5" />
+                            </Link>
+
+                            <button
+                              disabled={isDisabled}
+                              className={`p-2 rounded-lg transition ${
+                                isDisabled
+                                  ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                  : "bg-green-50 text-green-700 hover:bg-green-100"
+                              }`}
+                            >
+                              <ArrowDownTrayIcon className="w-5 h-5" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </section>
+            </>
+          )}
         </div>
       </div>
 

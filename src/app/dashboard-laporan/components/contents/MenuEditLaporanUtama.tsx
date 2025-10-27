@@ -8,16 +8,24 @@ import {
   DocumentIcon,
 } from "@heroicons/react/24/outline";
 import { addFooter, addFooterLampiranCALK } from "@/app/_utils/add-footers";
-import { BabCalk, LampiranDataUtama, MenuOption } from "@/app/_types/types";
+import {
+  BabCalk,
+  LampiranDataUtama,
+  LampiranDataUtamaFirestore,
+  MenuOption,
+} from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
+import { editLampiranUtamaFirestore } from "@/app/_lib/_queries/lampiran";
 
 interface EditLampiranUtamaProps {
+  dokumenId: string;
   setActiveMenu: (menu: MenuOption) => void;
   lampiran: LampiranDataUtama;
   onEditLampiranUtama: (updated: LampiranDataUtama) => void;
 }
 
 export default function MenuEditLampiranUtama({
+  dokumenId,
   setActiveMenu,
   lampiran,
   onEditLampiranUtama,
@@ -82,11 +90,6 @@ export default function MenuEditLampiranUtama({
     setIsGenerating(false);
   };
 
-  useEffect(() => {
-    generatePreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newFile, romawiLampiran, footerText, footer]);
-
   const handleFileChange = (file: File | null) => {
     if (!file) return;
     if (file.type !== "application/pdf") {
@@ -103,7 +106,28 @@ export default function MenuEditLampiranUtama({
     handleFileChange(e.dataTransfer.files[0] ?? null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    const docFile = newFile ?? lampiran.file;
+    interface TipeLampiran {
+      id: string;
+      file?: File;
+      urutan: number;
+      namaFileAsli: string;
+      namaFileDiStorageLokal: string;
+      romawiLampiran: string;
+      judulPembatasLampiran: string;
+      footerText: string;
+      footerWidth: number;
+      footerX: number;
+      footerY: number;
+      fontSize: number;
+      footerHeight: number;
+      jumlahHalaman: number;
+      isCALK: boolean;
+      babs?: BabCalk[];
+      jumlahTotalLembar: number;
+    }
+
     if (lampiran.isCALK) {
       if (!romawiLampiran || !judulLampiran) {
         alert("Silakan lengkapi semua field!");
@@ -116,9 +140,37 @@ export default function MenuEditLampiranUtama({
       }
     }
 
+    const newTipeLampiran: TipeLampiran = lampiran as unknown as TipeLampiran;
+
+    delete newTipeLampiran.file;
+
+    const newLampiranUtamaFirestore: LampiranDataUtamaFirestore = {
+      ...newTipeLampiran,
+      romawiLampiran,
+      judulPembatasLampiran: judulLampiran,
+      footerText,
+      footerWidth: footer.width,
+      footerHeight: footer.height,
+      footerX: footer.x,
+      footerY: footer.y,
+      fontSize: footer.fontSize,
+      babs: lampiran.isCALK ? babCALK : [],
+    };
+
+    const { success, error } = await editLampiranUtamaFirestore(
+      dokumenId,
+      newLampiranUtamaFirestore.id,
+      newLampiranUtamaFirestore
+    );
+
+    if (!success) {
+      alert("Terjadi kesalahan saat mengedit data lampiran " + error);
+      return;
+    }
+
     onEditLampiranUtama({
       ...lampiran,
-      file: newFile ?? lampiran.file,
+      file: docFile,
       romawiLampiran,
       judulPembatasLampiran: judulLampiran,
       footerText,
@@ -132,6 +184,10 @@ export default function MenuEditLampiranUtama({
 
     setActiveMenu(MenuOption.LAMPIRAN_UTAMA);
   };
+
+  useEffect(() => {
+    generatePreview();
+  }, []);
 
   return (
     <div className="p-6 w-full max-w-6xl mx-auto space-y-6">
