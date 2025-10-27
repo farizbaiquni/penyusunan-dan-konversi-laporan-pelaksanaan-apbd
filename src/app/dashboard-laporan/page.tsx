@@ -57,7 +57,7 @@ function useLampiranManager<T extends { id: string; urutan: number }>(
     jenisLaporan: string
   ) => {
     try {
-      onLoadingChange?.(true); // ⬅️ aktifkan loading sebelum mulai delete
+      onLoadingChange?.(true);
       const { success } = await deleteLampiranUtamaFirestore(
         dokumenIdFirestore,
         lampiranId
@@ -291,6 +291,8 @@ export default function Home() {
         setActiveMenu={setActiveMenu}
         lampiran={lampiranUtamaManager.editedLampiran}
         onEditLampiranUtama={lampiranUtamaManager.updateLampiran}
+        tahun={tahun}
+        jenisLaporan={jenisLaporan}
       />
     ) : (
       <p>File belum dipilih</p>

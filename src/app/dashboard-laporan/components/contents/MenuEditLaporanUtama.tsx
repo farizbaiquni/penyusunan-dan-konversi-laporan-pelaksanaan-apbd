@@ -16,12 +16,16 @@ import {
 } from "@/app/_types/types";
 import CalkStructureModal from "../../modals/LampiranCALKModal";
 import { editLampiranUtamaFirestore } from "@/app/_lib/_queries/lampiran";
+import { v4 } from "uuid";
+import LoadingProcessing from "@/app/_components/LoadingProcessing";
 
 interface EditLampiranUtamaProps {
   dokumenId: string;
   setActiveMenu: (menu: MenuOption) => void;
   lampiran: LampiranDataUtama;
   onEditLampiranUtama: (updated: LampiranDataUtama) => void;
+  tahun: number;
+  jenisLaporan: string;
 }
 
 export default function MenuEditLampiranUtama({
@@ -29,7 +33,11 @@ export default function MenuEditLampiranUtama({
   setActiveMenu,
   lampiran,
   onEditLampiranUtama,
+  tahun,
+  jenisLaporan,
 }: EditLampiranUtamaProps) {
+  const [isLoadingUpdateLampiranUtama, setIsLoadingUpdateLampiranUtama] =
+    useState(false);
   const [romawiLampiran, setRomawiLampiran] = useState(lampiran.romawiLampiran);
   const [judulLampiran, setJudulLampiran] = useState(
     lampiran.judulPembatasLampiran
@@ -107,56 +115,63 @@ export default function MenuEditLampiranUtama({
   };
 
   const handleSave = async () => {
+    setIsLoadingUpdateLampiranUtama(true);
     const docFile = newFile ?? lampiran.file;
-    interface TipeLampiran {
-      id: string;
-      file?: File;
-      urutan: number;
-      namaFileAsli: string;
-      namaFileDiStorageLokal: string;
-      romawiLampiran: string;
-      judulPembatasLampiran: string;
-      footerText: string;
-      footerWidth: number;
-      footerX: number;
-      footerY: number;
-      fontSize: number;
-      footerHeight: number;
-      jumlahHalaman: number;
-      isCALK: boolean;
-      babs?: BabCalk[];
-      jumlahTotalLembar: number;
-    }
 
     if (lampiran.isCALK) {
       if (!romawiLampiran || !judulLampiran) {
+        setIsLoadingUpdateLampiranUtama(false);
         alert("Silakan lengkapi semua field!");
         return;
       }
     } else {
       if (!romawiLampiran || !judulLampiran || !footerText) {
+        setIsLoadingUpdateLampiranUtama(false);
         alert("Silakan lengkapi semua field!");
         return;
       }
     }
 
-    const newTipeLampiran: TipeLampiran = lampiran as unknown as TipeLampiran;
-
-    delete newTipeLampiran.file;
-
     const newLampiranUtamaFirestore: LampiranDataUtamaFirestore = {
-      ...newTipeLampiran,
-      romawiLampiran,
-      judulPembatasLampiran: judulLampiran,
-      footerText,
-      footerWidth: footer.width,
-      footerHeight: footer.height,
-      footerX: footer.x,
-      footerY: footer.y,
-      fontSize: footer.fontSize,
-      babs: lampiran.isCALK ? babCALK : [],
+      id: lampiran.id,
+      urutan: lampiran.urutan,
+      namaFileAsli: lampiran.file.name,
+      namaFileDiStorageLokal: lampiran.namaFileDiStorageLokal,
+      romawiLampiran: lampiran.romawiLampiran,
+      judulPembatasLampiran: lampiran.judulPembatasLampiran,
+      footerText: lampiran.footerText,
+      footerWidth: lampiran.footerWidth,
+      footerX: lampiran.footerX,
+      footerY: lampiran.footerY,
+      fontSize: lampiran.fontSize,
+      footerHeight: lampiran.footerHeight,
+      jumlahHalaman: lampiran.jumlahHalaman,
+      isCALK: lampiran.isCALK,
+      babs: lampiran.babs,
+      jumlahTotalLembar: lampiran.jumlahTotalLembar,
     };
 
+    const namaNewFile = v4();
+    if (newFile) {
+      newLampiranUtamaFirestore.namaFileDiStorageLokal = namaNewFile;
+      const formData = new FormData();
+      formData.append("file", docFile);
+      formData.append("tahun", tahun.toString());
+      formData.append("jenisLaporan", jenisLaporan);
+      formData.append("namaFile", namaNewFile);
+      formData.append("namaFileLama", lampiran.namaFileDiStorageLokal);
+
+      const res = await fetch("/api/update-lampiran-utama", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        alert("Terjadi kesalahan saat mengedit data lampiran!");
+        setIsLoadingUpdateLampiranUtama(false);
+        return;
+      }
+    }
     const { success, error } = await editLampiranUtamaFirestore(
       dokumenId,
       newLampiranUtamaFirestore.id,
@@ -165,6 +180,7 @@ export default function MenuEditLampiranUtama({
 
     if (!success) {
       alert("Terjadi kesalahan saat mengedit data lampiran " + error);
+      setIsLoadingUpdateLampiranUtama(false);
       return;
     }
 
@@ -172,6 +188,9 @@ export default function MenuEditLampiranUtama({
       ...lampiran,
       file: docFile,
       romawiLampiran,
+      namaFileDiStorageLokal: newFile
+        ? namaNewFile
+        : lampiran.namaFileDiStorageLokal,
       judulPembatasLampiran: judulLampiran,
       footerText,
       footerWidth: footer.width,
@@ -182,6 +201,7 @@ export default function MenuEditLampiranUtama({
       babs: lampiran.isCALK ? babCALK : [],
     });
 
+    setIsLoadingUpdateLampiranUtama(false);
     setActiveMenu(MenuOption.LAMPIRAN_UTAMA);
   };
 
@@ -402,6 +422,9 @@ export default function MenuEditLampiranUtama({
           initialData={babCALK}
           onAddLampiranUtamaCALK={onAddLampiranUtamaCALK}
         />
+      )}
+      {isLoadingUpdateLampiranUtama && (
+        <LoadingProcessing message="Mengupdate lampiran..." />
       )}
     </div>
   );

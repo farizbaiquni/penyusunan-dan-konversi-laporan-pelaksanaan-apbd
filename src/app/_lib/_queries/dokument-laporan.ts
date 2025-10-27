@@ -75,6 +75,7 @@ export async function getDokumenLaporanByTahunAndJenisLaporanWithLampirans(
         id: l.data().id,
         urutan: l.data().urutan,
         file: lampiranFile!,
+        namaFileDiStorageLokal: l.data().namaFileDiStorageLokal,
         romawiLampiran: l.data().romawiLampiran,
         judulPembatasLampiran: l.data().judulPembatasLampiran,
         footerText: l.data().footerText,

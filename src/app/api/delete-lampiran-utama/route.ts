@@ -11,7 +11,7 @@ export async function DELETE(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const tahun = searchParams.get("tahun");
     const jenisLaporan = searchParams.get("jenisLaporan");
-    const namaFile = searchParams.get("namaFile"); // tanpa .pdf
+    const namaFile = searchParams.get("namaFile");
 
     if (!tahun || !jenisLaporan || !namaFile) {
       return NextResponse.json(

@@ -63,6 +63,7 @@ export interface LampiranDataUtama {
   id: string;
   urutan: number;
   file: File;
+  namaFileDiStorageLokal: string;
   romawiLampiran: string;
   judulPembatasLampiran: string;
   footerText: string;
