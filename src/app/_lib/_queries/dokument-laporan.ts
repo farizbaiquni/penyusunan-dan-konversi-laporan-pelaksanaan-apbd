@@ -26,15 +26,15 @@ import {
 
 export async function getDokumenLaporanByTahunAndJenisLaporanWithLampirans(
   tahun: number,
-  JenisLaporan: JenisLaporan
+  jenisLaporan: JenisLaporan
 ): Promise<DokumenLaporan[]> {
   const q = query(
     collection(db, "dokumenLaporan"),
     where("tahun", "==", tahun),
-    where("jenisLaporan", "==", JenisLaporan.toLowerCase())
+    where("jenisLaporan", "==", jenisLaporan.toLowerCase())
   );
+  console.log(tahun, jenisLaporan);
   const snapshot = await getDocs(q);
-
   if (snapshot.empty) return [];
 
   const result: DokumenLaporan[] = [];
@@ -49,7 +49,7 @@ export async function getDokumenLaporanByTahunAndJenisLaporanWithLampirans(
     );
     const lampiransSnapshot = await getDocs(lampiransCol);
 
-    const url: string = `/api/get-lampiran-utama?tahun=${tahun}&jenisLaporan=${JenisLaporan.toLowerCase()}`;
+    const url: string = `/api/lampiran-utama/get-lampiran-utama?tahun=${tahun}&jenisLaporan=${jenisLaporan.toLowerCase()}`;
     const res = await fetch(url);
     const dataFiles = await res.json();
     let files: File[] = [];

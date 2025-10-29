@@ -72,7 +72,7 @@ export async function addLampiranUtamaFirestore(
     const dokumenRef = doc(db, "dokumenLaporan", dokumenId);
     await setDoc(dokumenRef, { lastUpdated: Timestamp.now() }, { merge: true });
 
-    return { success: true };
+    return { success: true, lampiranId: lampiranRef.id.toString() };
   } catch (err) {
     console.error("Gagal menambahkan lampiran:", err);
     return { success: false, error: err };

@@ -61,7 +61,7 @@ export async function generateCoverRaperda(
   currentY -= 30;
   drawCenteredText("KABUPATEN KENDAL", currentY, 20, true);
   currentY -= 30;
-  drawCenteredText("NOMOR    TAHUN 2025", currentY, 20, true);
+  drawCenteredText(`NOMOR    TAHUN ${tahun}`, currentY, 20, true);
 
   currentY -= 90;
   drawCenteredText("TENTANG", currentY, 20, true);
@@ -144,7 +144,7 @@ export async function generateCoverRaperbup(
   currentY -= 120;
   drawCenteredText("RANCANGAN PERATURAN BUPATI KENDAL", currentY, 20, true);
   currentY -= 30;
-  drawCenteredText("NOMOR    TAHUN 2025", currentY, 20, true);
+  drawCenteredText(`NOMOR    TAHUN ${tahun}`, currentY, 20, true);
 
   currentY -= 100;
   drawCenteredText("TENTANG", currentY, 20, true);

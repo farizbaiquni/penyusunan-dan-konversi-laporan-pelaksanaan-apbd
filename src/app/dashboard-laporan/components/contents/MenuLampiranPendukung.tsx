@@ -20,6 +20,7 @@ import OrderLampiranPendukungModal from "../../modals/OrderLampiranPendukungModa
    INTERFACE
 ============================================================ */
 interface LampiranManagerProps {
+  tahun: number;
   jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
   lampirans: LampiranDataPendukung[];
@@ -32,6 +33,7 @@ interface LampiranManagerProps {
    KOMPONEN UTAMA
 ============================================================ */
 export default function MenuLampiranPendukung({
+  tahun,
   jenisLaporan,
   setActiveMenu,
   lampirans,
@@ -92,8 +94,9 @@ export default function MenuLampiranPendukung({
     <div className="p-6 bg-white rounded-2xl shadow-md max-w-5xl mx-auto">
       {/* HEADER */}
       <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
-        <h2 className="text-2xl font-semibold text-gray-800 flex items-center gap-2 capitalize">
-          📎 Daftar Lampiran Pendukung {generateTextJenisLaporan(jenisLaporan)}
+        <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2 capitalize">
+          📎 Daftar Lampiran Pendukung {generateTextJenisLaporan(jenisLaporan)}{" "}
+          {tahun}
         </h2>
         <div className="flex gap-2">
           <button

@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
-import { generateCoverRaperda } from "@/app/_utils/generate-cover";
+import {
+  generateCoverRaperbup,
+  generateCoverRaperda,
+} from "@/app/_utils/generate-cover";
 import { generateDaftarIsi } from "@/app/_utils/generate-daftar-isi";
 import {
   addFooterToPages,
@@ -11,16 +14,21 @@ import {
 import {
   BabCalk,
   DaftarIsiLampiran,
+  JenisLaporan,
   LampiranDataPendukung,
   LampiranDataUtama,
 } from "@/app/_types/types";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import Image from "next/image";
+import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 
 interface PreviewProps {
+  jenisLaporan: JenisLaporan;
+  tahun: number;
   batangTubuh: File | null;
   lampirans: LampiranDataUtama[];
   lampiransPendukung: LampiranDataPendukung[];
-  onBack?: () => void; // untuk tombol kembali
+  onBack?: () => void;
 }
 
 async function generateEntriesFromLampiran(
@@ -30,8 +38,6 @@ async function generateEntriesFromLampiran(
   let currentPage = 1; // nomor halaman PDF final saat ini
 
   for (const lampiran of lampirans) {
-    const lampiranBytes = await lampiran.file.arrayBuffer();
-    const lampiranDoc = await PDFDocument.load(lampiranBytes);
     const jumlahHalaman = lampiran.jumlahHalaman;
 
     // Jika lampiran CALK, sesuaikan halamanMulai bab/subbab
@@ -55,20 +61,22 @@ async function generateEntriesFromLampiran(
     entries.push({
       id: crypto.randomUUID(),
       romawi: lampiran.romawiLampiran,
-      judul: lampiran.footerText || lampiran.file.name.replace(/\.pdf$/i, ""),
-      nomorHalaman: currentPage, // halaman pertama lampiran
+      judul: lampiran.judulPembatasLampiran,
+      nomorHalaman: currentPage,
       jamlahPenomoranHalaman: jumlahHalaman,
       isCALK: lampiran.isCALK,
       babs: adjustedBabs || lampiran.babs,
     });
 
-    currentPage += jumlahHalaman; // update untuk lampiran berikutnya
+    currentPage += jumlahHalaman;
   }
 
   return entries;
 }
 
 export default function MenuPreview({
+  jenisLaporan,
+  tahun,
   batangTubuh,
   lampirans,
   lampiransPendukung,
@@ -89,7 +97,11 @@ export default function MenuPreview({
       const fontRegular = await finalPdf.embedFont(StandardFonts.TimesRoman);
 
       // 1️⃣ Tambahkan cover
-      await generateCoverRaperda(2025, finalPdf);
+      if (jenisLaporan === JenisLaporan.RAPERDA) {
+        await generateCoverRaperda(2025, finalPdf);
+      } else if (jenisLaporan === JenisLaporan.RAPERBUP) {
+        await generateCoverRaperbup(2025, finalPdf);
+      }
 
       // 2️⃣ Tambahkan batang tubuh jika ada
       if (batangTubuh) {
@@ -137,11 +149,16 @@ export default function MenuPreview({
           let currentY = height - 90;
           drawCenteredText(`LAMPIRAN ${lampiran.romawiLampiran}`, currentY, 15);
           currentY -= 50;
-          drawCenteredText(
-            "RANCANGAN PERATURAN DAERAH KABUPATEN KENDAL",
-            currentY,
-            15
-          );
+          if (jenisLaporan === JenisLaporan.RAPERDA) {
+            drawCenteredText(
+              "RANCANGAN PERATURAN DAERAH KABUPATEN KENDAL",
+              currentY,
+              15
+            );
+          } else if (jenisLaporan === JenisLaporan.RAPERBUP) {
+            drawCenteredText("RANCANGAN PERATURAN BUPATI KENDAL", currentY, 15);
+          }
+
           currentY -= 20;
           drawCenteredText("NOMOR 1 TAHUN 2025", currentY, 15);
           currentY -= 120;
@@ -226,6 +243,8 @@ export default function MenuPreview({
 
   // bersihkan URL saat komponen unmount
   useEffect(() => {
+    console.log("first");
+    console.log(lampirans);
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
@@ -235,13 +254,13 @@ export default function MenuPreview({
     <div className="px-2 py-3 max-w-5xl mx-auto space-y-3 bg-white rounded-sm shadow-sm border border-gray-200">
       {/* Header dengan tombol kembali */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-blue-700 flex items-center gap-2">
-          📄 Preview Dokumen
+        <h1 className="text-xl font-semibold text-blue-800 flex items-center gap-2 capitalize">
+          📄 Preview Dokumen {generateTextJenisLaporan(jenisLaporan)} {tahun}
         </h1>
         {onBack && (
           <button
             onClick={onBack}
-            className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition"
+            className="flex  items-center gap-2 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition"
           >
             <ArrowLeftIcon className="w-4 h-4" />
             <span className="text-sm font-medium">Kembali</span>
@@ -251,10 +270,10 @@ export default function MenuPreview({
         <button
           onClick={generateFinalPDF}
           disabled={isGenerating}
-          className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg font-medium transition text-white ${
+          className={`flex items-center text-sm justify-center gap-2 px-3 py-2 rounded-md font-medium transition text-white ${
             isGenerating
               ? "bg-gray-400 cursor-not-allowed"
-              : "bg-blue-700 hover:bg-blue-800"
+              : "bg-blue-800 hover:bg-blue-900"
           }`}
         >
           {isGenerating ? (
@@ -283,14 +302,14 @@ export default function MenuPreview({
             </>
           ) : (
             <>
-              🔄 <span>Perbarui Preview</span>
+              ⟳ <span>Perbarui Preview</span>
             </>
           )}
         </button>
       </div>
 
       {/* Preview PDF */}
-      <div className="border rounded-md shadow-sm h-[550px] overflow-auto">
+      <div className="border rounded-md shadow-sm h-[550px] overflow-auto ">
         {previewUrl ? (
           <iframe
             src={previewUrl}
@@ -299,7 +318,16 @@ export default function MenuPreview({
           />
         ) : (
           <div className="text-center text-gray-500 py-20 border-dashed border h-full flex items-center justify-center">
-            Belum ada dokumen untuk ditampilkan.
+            <div className="flex flex-col justify-center items-center">
+              <Image
+                width={20}
+                height={20}
+                src="/animations/loading-animation.gif"
+                alt="Loading animation"
+                className="w-20 h-20 object-contain"
+              />
+              <p>Memuat Preview...</p>
+            </div>
           </div>
         )}
       </div>

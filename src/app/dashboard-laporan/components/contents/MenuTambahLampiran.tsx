@@ -132,7 +132,7 @@ export default function MenuTambahLampiran({
       formData.append("jenisLaporan", jenisLaporan);
       formData.append("namaFile", namaFile);
 
-      const res = await fetch("/api/save-lampiran-utama", {
+      const res = await fetch("/api/lampiran-utama/save-lampiran-utama", {
         method: "POST",
         body: formData,
       });
@@ -167,10 +167,16 @@ export default function MenuTambahLampiran({
         isCALK
       );
 
+      if (!firestoreResult.success) {
+        alert("Gagal menyimpan ke database");
+        return;
+      }
+
       const newLampiran: LampiranDataUtama = {
-        id: namaFile,
+        id: firestoreResult.lampiranId ? firestoreResult.lampiranId : namaFile,
         urutan: urutanLampiran + 1,
         file: file,
+        namaFileDiStorageLokal: namaFile,
         romawiLampiran,
         judulPembatasLampiran,
         footerText,

@@ -8,14 +8,22 @@ import {
   addFooterToPages,
   addFooterToPagesCALK,
 } from "@/app/_utils/add-footers";
-import { DaftarIsiLampiran, LampiranDataUtama } from "@/app/_types/types";
+import {
+  DaftarIsiLampiran,
+  JenisLaporan,
+  LampiranDataUtama,
+} from "@/app/_types/types";
 
 interface GenerateProps {
+  tahun: number;
+  jenisLaporan: JenisLaporan;
   batangTubuh: File | null;
   lampirans: LampiranDataUtama[];
 }
 
 export default function MenuGenerate({
+  tahun,
+  jenisLaporan,
   batangTubuh,
   lampirans,
 }: GenerateProps) {
@@ -92,13 +100,17 @@ export default function MenuGenerate({
         let currentY = height - 90;
         drawCenteredText(`LAMPIRAN ${lampiran.romawiLampiran}`, currentY, 15);
         currentY -= 50;
-        drawCenteredText(
-          "RANCANGAN PERATURAN DAERAH KABUPATEN KENDAL",
-          currentY,
-          15
-        );
+        if (jenisLaporan === JenisLaporan.RAPERDA) {
+          drawCenteredText(
+            "RANCANGAN PERATURAN DAERAH KABUPATEN KENDAL",
+            currentY,
+            15
+          );
+        } else if (jenisLaporan === JenisLaporan.RAPERBUP) {
+          drawCenteredText("RANCANGAN PERATURAN BUPATI KENDAL", currentY, 15);
+        }
         currentY -= 20;
-        drawCenteredText("NOMOR 1 TAHUN 2025", currentY, 15);
+        drawCenteredText(`NOMOR   TAHUN ${tahun}`, currentY, 15);
         currentY -= 120;
         drawCenteredText("RINGKASAN LAPORAN REALISASI", currentY, 22, true);
         currentY -= 30;

@@ -5,7 +5,7 @@ export const generateTextJenisLaporan = (jenis: JenisLaporan) => {
     case JenisLaporan.RAPERDA:
       return "raperda";
     case JenisLaporan.RAPERBUP:
-      return "rapebup";
+      return "raperbup";
     case JenisLaporan.PERDA:
       return "perda";
     case JenisLaporan.PERBUP:

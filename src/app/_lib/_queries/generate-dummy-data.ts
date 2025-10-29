@@ -3,8 +3,6 @@ import { deleteDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
 import {
   DokumenLaporanFirestore,
-  LampiranDataPendukung,
-  LampiranDataUtama,
   StatusDokumenLaporan,
 } from "@/app/_types/types";
 import { getJenisLaporanfromString } from "@/app/_utils/general";

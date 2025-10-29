@@ -38,6 +38,9 @@ export default function MenuEditLampiranUtama({
 }: EditLampiranUtamaProps) {
   const [isLoadingUpdateLampiranUtama, setIsLoadingUpdateLampiranUtama] =
     useState(false);
+  const [jumlahHalaman, setJumlahHalaman] = useState<number>(
+    lampiran.jumlahHalaman
+  );
   const [romawiLampiran, setRomawiLampiran] = useState(lampiran.romawiLampiran);
   const [judulLampiran, setJudulLampiran] = useState(
     lampiran.judulPembatasLampiran
@@ -137,14 +140,14 @@ export default function MenuEditLampiranUtama({
       urutan: lampiran.urutan,
       namaFileAsli: lampiran.file.name,
       namaFileDiStorageLokal: lampiran.namaFileDiStorageLokal,
-      romawiLampiran: lampiran.romawiLampiran,
-      judulPembatasLampiran: lampiran.judulPembatasLampiran,
-      footerText: lampiran.footerText,
-      footerWidth: lampiran.footerWidth,
-      footerX: lampiran.footerX,
-      footerY: lampiran.footerY,
-      fontSize: lampiran.fontSize,
-      footerHeight: lampiran.footerHeight,
+      romawiLampiran: romawiLampiran,
+      judulPembatasLampiran: judulLampiran,
+      footerText: footerText,
+      footerWidth: footer.width,
+      footerX: footer.x,
+      footerY: footer.y,
+      fontSize: footer.fontSize,
+      footerHeight: footer.height,
       jumlahHalaman: lampiran.jumlahHalaman,
       isCALK: lampiran.isCALK,
       babs: lampiran.babs,
@@ -154,34 +157,42 @@ export default function MenuEditLampiranUtama({
     const namaNewFile = v4();
     if (newFile) {
       newLampiranUtamaFirestore.namaFileDiStorageLokal = namaNewFile;
-      const formData = new FormData();
-      formData.append("file", docFile);
-      formData.append("tahun", tahun.toString());
-      formData.append("jenisLaporan", jenisLaporan);
-      formData.append("namaFile", namaNewFile);
-      formData.append("namaFileLama", lampiran.namaFileDiStorageLokal);
-
-      const res = await fetch("/api/update-lampiran-utama", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        alert("Terjadi kesalahan saat mengedit data lampiran!");
-        setIsLoadingUpdateLampiranUtama(false);
-        return;
-      }
     }
+
+    const formData = new FormData();
+    formData.append("file", docFile);
+    formData.append("tahun", tahun.toString());
+    formData.append("jenisLaporan", jenisLaporan);
+    formData.append("namaFile", namaNewFile);
+    formData.append("namaFileLama", lampiran.namaFileDiStorageLokal);
+
     const { success, error } = await editLampiranUtamaFirestore(
       dokumenId,
       newLampiranUtamaFirestore.id,
       newLampiranUtamaFirestore
     );
+    // console.log(success);
+    // console.log(dokumenId);
+    // console.log(newLampiranUtamaFirestore);
+    // setIsLoadingUpdateLampiranUtama(false);
+    // return;
 
     if (!success) {
       alert("Terjadi kesalahan saat mengedit data lampiran " + error);
       setIsLoadingUpdateLampiranUtama(false);
       return;
+    }
+
+    if (newFile) {
+      const res = await fetch("/api/lampiran-utama/update-lampiran-utama", {
+        method: "POST",
+        body: formData,
+      });
+      if (!res.ok) {
+        alert("Terjadi kesalahan saat mengedit data lampiran!");
+        setIsLoadingUpdateLampiranUtama(false);
+        return;
+      }
     }
 
     onEditLampiranUtama({
@@ -260,6 +271,25 @@ export default function MenuEditLampiranUtama({
               onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
             />
           </div>
+        </div>
+
+        {/* Jumlah Halaman Lampiran */}
+        <div>
+          <label
+            className={`${
+              !lampiran.isCALK
+                ? "hidden"
+                : "block text-gray-700 font-medium mb-1"
+            }`}
+          >
+            Jumlah Halaman Lampiran
+          </label>
+          <input
+            type="number"
+            value={jumlahHalaman}
+            onChange={(e) => setJumlahHalaman(Number(e.target.value))}
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
         {/* Romawi Lampiran */}

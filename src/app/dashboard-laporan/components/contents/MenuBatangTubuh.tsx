@@ -1,39 +1,41 @@
 "use client";
 
 import React, { useState, useEffect, DragEvent } from "react";
-import { XMarkIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import { JenisLaporan } from "@/app/_types/types";
 import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
+import Image from "next/image";
+import {
+  addBatangTubuh,
+  deleteBatangTubuh,
+} from "@/app/_lib/_queries/batang-tubuh";
+import LoadingProcessing from "@/app/_components/LoadingProcessing";
 
 interface BatangTubuhProps {
+  dokumenIdFirestore: string;
+  tahun: number;
   jenisLaporan: JenisLaporan;
   batangTubuhFile: File | null;
-  setBatangTubuh: (file: File | null) => void;
+  setBatangTubuhFile: (file: File | null) => void;
 }
 
 export default function MenuBatangTubuh({
+  dokumenIdFirestore,
+  tahun,
   jenisLaporan,
   batangTubuhFile,
-  setBatangTubuh,
+  setBatangTubuhFile,
 }: BatangTubuhProps) {
+  const [isLoadingAddBatangTubuh, setIsLoadingAddBatangTubuh] = useState(false);
+  const [isLoadingDeleteBatangTubuh, setIsLoadingDeleteBatangTubuh] =
+    useState(false);
   const [batangTubuhURL, setBatangTubuhURL] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [message, setMessage] = useState<string | null>(
-    batangTubuhFile ? `✅ File "${batangTubuhFile.name}" siap digunakan.` : null
+    batangTubuhFile
+      ? `✅ File "${batangTubuhFile.name}" siap digunakan, silakan klik "Simpan"`
+      : null
   );
-
-  // Update URL preview setiap kali file berubah
-  useEffect(() => {
-    if (batangTubuhFile) {
-      const url = URL.createObjectURL(batangTubuhFile);
-      setBatangTubuhURL(url);
-      setMessage(`✅ File "${batangTubuhFile.name}" siap digunakan.`);
-      return () => URL.revokeObjectURL(url); // cleanup URL lama
-    } else {
-      setBatangTubuhURL(null);
-      setMessage(null);
-    }
-  }, [batangTubuhFile]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -57,12 +59,44 @@ export default function MenuBatangTubuh({
       setMessage("❌ Hanya file PDF yang diperbolehkan.");
       return;
     }
-    setBatangTubuh(file);
+    setBatangTubuhFile(file);
   };
 
-  const handleClear = () => {
-    setBatangTubuh(null);
+  const handleClear = async () => {
+    setIsLoadingDeleteBatangTubuh(true);
+    await deleteBatangTubuh(
+      batangTubuhFile?.name || "",
+      tahun,
+      jenisLaporan,
+      dokumenIdFirestore
+    );
+    setIsLoadingDeleteBatangTubuh(false);
+    setBatangTubuhFile(null);
   };
+
+  const handleSaveBatangTubuh = async () => {
+    if (!batangTubuhFile) {
+      alert("Unggah file PDF terlebih dahulu!");
+      return;
+    }
+    setIsLoadingAddBatangTubuh(true);
+    addBatangTubuh(batangTubuhFile, tahun, jenisLaporan, dokumenIdFirestore);
+
+    setIsLoadingAddBatangTubuh(false);
+  };
+
+  // Update URL preview setiap kali file berubah
+  useEffect(() => {
+    if (batangTubuhFile) {
+      const url = URL.createObjectURL(batangTubuhFile);
+      setBatangTubuhURL(url);
+      setMessage(`✅ File "${batangTubuhFile.name}" siap digunakan.`);
+      return () => URL.revokeObjectURL(url);
+    } else {
+      setBatangTubuhURL(null);
+      setMessage(null);
+    }
+  }, [batangTubuhFile]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 flex flex-col items-center py-12 px-4">
@@ -91,7 +125,7 @@ export default function MenuBatangTubuh({
             className={`flex flex-col items-center justify-center w-full h-56 border-2 border-dashed rounded-lg transition-all duration-300
               ${
                 isDragging
-                  ? "border-blue-600 bg-blue-50"
+                  ? "border-blue-700 bg-blue-50"
                   : "border-blue-300 bg-white"
               }`}
             onDragOver={(e) => {
@@ -107,8 +141,14 @@ export default function MenuBatangTubuh({
             onDrop={handleDrop}
           >
             <div className="flex flex-col items-center justify-center pt-4 pb-6 pointer-events-none">
-              <DocumentTextIcon className="w-10 h-10 mb-4 text-gray-500" />
-              <p className="mb-2 text-gray-500">
+              <Image
+                src="/images/paper.png"
+                alt="Upload Icon"
+                width={55}
+                height={55}
+                className="animate-bounce"
+              />
+              <p className="mb-2 text-gray-500 mt-2">
                 <span className="font-semibold">Klik untuk unggah</span> atau
                 tarik dan lepaskan
               </p>
@@ -124,7 +164,13 @@ export default function MenuBatangTubuh({
           </label>
         ) : (
           <div className="flex flex-col items-center text-center animate-fadeIn">
-            <DocumentTextIcon className="w-14 h-14 text-green-500 mb-2 animate-bounce" />
+            <Image
+              src="/images/paper.png"
+              alt="Upload Icon"
+              width={55}
+              height={55}
+              className="animate-bounce"
+            />
             <p className="text-gray-800 font-semibold text-lg">
               {batangTubuhFile.name}
             </p>
@@ -134,25 +180,21 @@ export default function MenuBatangTubuh({
 
             <div className="flex gap-3">
               <button
-                onClick={() => setMessage("✅ File siap digunakan.")}
-                className="bg-blue-600 hover:bg-blue-700 hover:scale-105 text-white font-semibold px-5 py-2 rounded-lg shadow transition transform"
+                onClick={() => handleSaveBatangTubuh()}
+                className="bg-blue-600 cursor-pointer hover:bg-blue-700 hover:scale-105 text-white font-semibold px-5 py-2 rounded-lg shadow transition transform"
               >
                 Simpan
               </button>
               <button
                 onClick={handleClear}
-                className="flex items-center bg-gray-200 hover:bg-gray-300 hover:scale-105 text-gray-700 font-medium px-4 py-2 rounded-lg transition transform"
+                className="flex items-center cursor-pointer bg-red-300 hover:bg-red-500 font-semibold hover:scale-105 text-gray-900  px-4 py-2 rounded-lg transition transform"
               >
                 <XMarkIcon className="w-5 h-5 mr-1" />
                 Hapus
               </button>
             </div>
 
-            {message && (
-              <p className="mt-4 text-center text-sm text-gray-700">
-                {message}
-              </p>
-            )}
+            <p className="mt-4 text-center text-sm text-gray-700">{message}</p>
           </div>
         )}
       </div>
@@ -169,6 +211,16 @@ export default function MenuBatangTubuh({
             title="Preview Batang Tubuh"
           />
         </div>
+      )}
+
+      {/* Loading Add Batang Tubuh */}
+      {isLoadingAddBatangTubuh && (
+        <LoadingProcessing message="Menyimpan Batang Tubuh..." />
+      )}
+
+      {/* Loading Delete Batang Tubuh */}
+      {isLoadingDeleteBatangTubuh && (
+        <LoadingProcessing message="Menghapus Batang Tubuh..." />
       )}
     </div>
   );

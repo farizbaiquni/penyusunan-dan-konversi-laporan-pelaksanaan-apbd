@@ -65,7 +65,7 @@ function useLampiranManager<T extends { id: string; urutan: number }>(
       if (!success) {
         alert("Gagal menghapus lampiran di database");
       } else {
-        const url = `/api/delete-lampiran-utama?tahun=${tahun}&jenisLaporan=${jenisLaporan}&namaFile=${lampiranId}`;
+        const url = `/api/lampiran-utama/delete-lampiran-utama?tahun=${tahun}&jenisLaporan=${jenisLaporan}&namaFile=${lampiranId}`;
         await fetch(url, { method: "DELETE" });
         setLampirans((prev) => prev.filter((l) => l.id !== lampiranId));
         alert(`Lampiran berhasil dihapus!`);
@@ -151,7 +151,7 @@ export default function Home() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [isLoadingDelete, setIsLoadingDelete] = useState(false);
-  const jenisLaporanParam = searchParams.get("jenisLaporan");
+  const jenisLaporanParam = searchParams.get("jenis-laporan");
   const tahunParam = searchParams.get("tahun");
 
   const [jenisLaporan, setJenisLaporan] = useState<JenisLaporan>(
@@ -205,6 +205,7 @@ export default function Home() {
 
   useEffect(() => {
     async function fetchData() {
+      let batangTubuhParam: string | null = null;
       setLoading(true);
       await getDokumenLaporanByTahunAndJenisLaporanWithLampirans(
         tahun,
@@ -212,6 +213,7 @@ export default function Home() {
       ).then((dokumenLaporan) => {
         if (dokumenLaporan.length > 0) {
           const dokumenLaporanData = dokumenLaporan[0];
+          batangTubuhParam = dokumenLaporanData.batangTubuh;
           setDokumenIdFirestore(dokumenLaporanData.id);
           setJenisLaporan(dokumenLaporanData.jenisLaporan);
           setBatangTubuhUrl(dokumenLaporanData.batangTubuh);
@@ -227,8 +229,23 @@ export default function Home() {
           router.push(`/`);
           alert(message);
         }
-        setLoading(false);
       });
+
+      if (batangTubuhParam) {
+        const res = await fetch(
+          `/api/batang-tubuh/get-batang-tubuh?tahun=${tahun}&jenisLaporan=${jenisLaporan}&namaFile=${batangTubuhParam}`
+        );
+        if (!res.ok) {
+          alert("File batang tubuh tidak ditemukan atau gagal diambil.");
+        }
+        const blob = await res.blob();
+        const file = new File([blob], `${batangTubuhParam}.pdf`, {
+          type: "application/pdf",
+        });
+
+        setBatangTubuhFile(file);
+      }
+      setLoading(false);
     }
     fetchData();
   }, []);
@@ -250,13 +267,16 @@ export default function Home() {
     ),
     [MenuOption.BATANG_TUBUH]: (
       <MenuBatangTubuh
+        dokumenIdFirestore={dokumenIdFirestore}
+        tahun={tahun}
         jenisLaporan={jenisLaporan}
         batangTubuhFile={batangTubuhFile}
-        setBatangTubuh={setBatangTubuhFile}
+        setBatangTubuhFile={setBatangTubuhFile}
       />
     ),
     [MenuOption.LAMPIRAN_UTAMA]: (
       <Lampiran
+        tahun={tahun}
         jenisLaporan={jenisLaporan}
         setActiveMenu={setActiveMenu}
         lampirans={lampiranUtamaManager.lampirans}
@@ -299,6 +319,7 @@ export default function Home() {
     ),
     [MenuOption.LAMPIRAN_PENDUKUNG]: (
       <MenuLampiranPendukung
+        tahun={tahun}
         jenisLaporan={jenisLaporan}
         setActiveMenu={setActiveMenu}
         lampirans={lampiranPendukungManager.lampirans}
@@ -338,6 +359,8 @@ export default function Home() {
       ),
     [MenuOption.PREVIEW]: (
       <MenuPreview
+        jenisLaporan={jenisLaporan}
+        tahun={tahun}
         batangTubuh={batangTubuhFile}
         lampirans={lampiranUtamaManager.lampirans}
         lampiransPendukung={lampiranPendukungManager.lampirans}
@@ -345,26 +368,13 @@ export default function Home() {
     ),
     [MenuOption.GENERATE]: (
       <MenuGenerate
+        tahun={tahun}
+        jenisLaporan={jenisLaporan}
         batangTubuh={batangTubuhFile}
         lampirans={lampiranUtamaManager.lampirans}
       />
     ),
   };
-
-  const LoadingSkeleton = () => (
-    <div className="animate-pulse space-y-6">
-      <div className="h-6 bg-gray-300 rounded w-1/3"></div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {Array(4)
-          .fill(0)
-          .map((_, i) => (
-            <div key={i} className="h-32 bg-gray-200 rounded-lg"></div>
-          ))}
-      </div>
-      <div className="h-5 bg-gray-300 rounded w-1/2 mt-6"></div>
-      <div className="h-64 bg-gray-200 rounded-md mt-3"></div>
-    </div>
-  );
 
   return (
     <div className="flex min-h-screen bg-yellow-100">
@@ -375,7 +385,23 @@ export default function Home() {
       />
       <main className="ml-64 flex-1 bg-blue-50 p-6 overflow-y-auto">
         {loading ? (
-          <LoadingSkeleton />
+          <div
+            className={`fixed inset-0 z-50 flex flex-col items-center justify-center bg-white transition-opacity duration-700 ${
+              loading ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
+          >
+            <Image
+              src="/animations/loading-2.gif" // ganti dengan path GIF kamu
+              alt="Loading..."
+              width={120}
+              height={120}
+              priority
+              className="select-none"
+            />
+            <p className="mt-4 text-gray-700 text-md animate-pulse font-bold">
+              Memuat halaman...
+            </p>
+          </div>
         ) : (
           menuComponents[activeMenu] ?? (
             <div className="p-6 text-gray-500">Konten belum tersedia.</div>
