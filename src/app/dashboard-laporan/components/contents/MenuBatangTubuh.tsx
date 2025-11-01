@@ -172,7 +172,7 @@ export default function MenuBatangTubuh({
               className="animate-bounce"
             />
             <p className="text-gray-800 font-semibold text-lg">
-              {batangTubuhFile.name}
+              Lembaran Batang Tubuh
             </p>
             <p className="text-sm text-gray-500 mb-4">
               {(batangTubuhFile.size / 1024 / 1024).toFixed(2)} MB

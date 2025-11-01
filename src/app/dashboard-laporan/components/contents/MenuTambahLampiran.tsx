@@ -16,6 +16,91 @@ import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 import { v4 } from "uuid";
 import { addLampiranUtamaFirestore } from "@/app/_lib/_queries/lampiran";
 import LoadingProcessing from "@/app/_components/LoadingProcessing";
+import UploadModalTambahLampiran from "@/app/_components/modals/TambahDocSatuBagianRaperbup";
+import LampiranUtamaVariasiRaperbupModal from "../../modals/LampiranUtamaVariasiRaperbupModal";
+
+export interface DaftarOPDAndFileType {
+  id: number;
+  nama: string;
+  file: File | null;
+}
+const daftarOPD: DaftarOPDAndFileType[] = [
+  { id: 1, nama: "Dinas Pendidikan dan Kebudayaan", file: null },
+  { id: 2, nama: "Dinas Kesehatan", file: null },
+  { id: 3, nama: "PKM Plantungan", file: null },
+  { id: 4, nama: "PKM Sukorejo 1", file: null },
+  { id: 5, nama: "PKM Sukorejo 2", file: null },
+  { id: 6, nama: "PKM Pageruyung", file: null },
+  { id: 7, nama: "PKM Patean", file: null },
+  { id: 8, nama: "PKM Singorojo 1", file: null },
+  { id: 9, nama: "PKM Singorojo 2", file: null },
+  { id: 10, nama: "PKM Limbangan", file: null },
+  { id: 11, nama: "PKM Brangsong 1", file: null },
+  { id: 12, nama: "PKM Brangsong 2", file: null },
+  { id: 13, nama: "PKM Pegandon", file: null },
+  { id: 14, nama: "PKM Ngampel", file: null },
+  { id: 15, nama: "PKM Gemuh 1", file: null },
+  { id: 16, nama: "PKM Gemuh 2", file: null },
+  { id: 17, nama: "PKM Ringinarum", file: null },
+  { id: 18, nama: "PKM Weleri 1", file: null },
+  { id: 19, nama: "PKM Weleri 2", file: null },
+  { id: 20, nama: "PKM Rowosari 1", file: null },
+  { id: 21, nama: "PKM Rowosari 2", file: null },
+  { id: 22, nama: "PKM Boja 1", file: null },
+  { id: 23, nama: "PKM Boja 2", file: null },
+  { id: 24, nama: "PKM Kaliwungu", file: null },
+  { id: 25, nama: "PKM Kaliwungu Selatan", file: null },
+  { id: 26, nama: "PKM Cepiring", file: null },
+  { id: 27, nama: "PKM Kangkung 1", file: null },
+  { id: 28, nama: "PKM Kangkung 2", file: null },
+  { id: 29, nama: "PKM Patebon 1", file: null },
+  { id: 30, nama: "PKM Patebon 2", file: null },
+  { id: 31, nama: "PKM Kendal 1", file: null },
+  { id: 32, nama: "PKM Kendal 2", file: null },
+  { id: 33, nama: "RSUD Soewondo", file: null },
+  { id: 34, nama: "Dinas Pekerjaan Umum dan Penataan Ruang", file: null },
+  { id: 35, nama: "Dinas Perumahan Rakyat dan Kawasan Permukiman", file: null },
+  {
+    id: 36,
+    nama: "Satuan Polisi Pamong Praja dan Pemadam Kebakaran",
+    file: null,
+  },
+  { id: 37, nama: "Badan Penanggulangan Bencana Daerah", file: null },
+  { id: 38, nama: "Dinas Sosial", file: null },
+  { id: 39, nama: "Dinas Perindustrian dan Tenaga Kerja", file: null },
+  { id: 40, nama: "Dinas Lingkungan Hidup", file: null },
+  { id: 41, nama: "Dinas Kependudukan dan Pencatatan Sipil", file: null },
+  { id: 42, nama: "Dinas Pemberdayaan Masyarakat dan Desa", file: null },
+  {
+    id: 43,
+    nama: "Dinas Pengendalian Penduduk, Keluarga Berencana, Pemberdayaan Perempuan Dan Perlindungan Anak",
+    file: null,
+  },
+  { id: 44, nama: "Dinas Perhubungan", file: null },
+  { id: 45, nama: "Dinas Komunikasi Dan Informatika", file: null },
+  {
+    id: 46,
+    nama: "Dinas Perdagangan, Koperasi, Usaha Kecil dan Menengah",
+    file: null,
+  },
+  {
+    id: 47,
+    nama: "Dinas Penanaman Modal dan Pelayanan Terpadu Satu Pintu",
+    file: null,
+  },
+  { id: 48, nama: "Dinas Kepemudaan, Olah Raga dan Pariwisata", file: null },
+  { id: 49, nama: "Dinas Kearsipan dan Perpustakaan", file: null },
+  { id: 50, nama: "Dinas Kelautan dan Perikanan", file: null },
+  { id: 51, nama: "Dinas Pertanian dan Pangan", file: null },
+  { id: 52, nama: "Sekretariat Daerah", file: null },
+  { id: 53, nama: "Sekretariat DPRD", file: null },
+  {
+    id: 54,
+    nama: "Badan Perencanaan, Penelitian dan Pengembangan",
+    file: null,
+  },
+  { id: 55, nama: "Badan Pengelola Keuangan dan Aset Daerah", file: null },
+];
 
 interface TambahLampiranProps {
   jenisLaporan: JenisLaporan;
@@ -34,6 +119,11 @@ export default function MenuTambahLampiran({
   tahun,
   dokumenIdFirestore,
 }: TambahLampiranProps) {
+  const [isOpenVariasiLampiranRaperbup, setIsOpenVariasiLampiranRaperbup] =
+    useState(false);
+  const [daftarOPDAndFile, setDaftarOPDAndFile] =
+    useState<DaftarOPDAndFileType[]>(daftarOPD);
+  const [openUploadModal, setOpenUploadModal] = useState(false);
   const [isLoadingSaving, setIsLoadingSaving] = useState(false);
   const [romawiLampiran, setRomawiLampiran] = useState("");
   const [judulPembatasLampiran, setJudulPembatasLampiran] = useState("");
@@ -56,6 +146,15 @@ export default function MenuTambahLampiran({
 
   const fileDataRef = useRef<ArrayBuffer | null>(null);
 
+  const updateOPDBLampiranById = (
+    id: number,
+    updatedData: Partial<DaftarOPDAndFileType>
+  ) => {
+    setDaftarOPDAndFile((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, ...updatedData } : item))
+    );
+  };
+
   const onAddLampiranUtamaCALK = (data: BabCalk[]) => {
     setBabCALK(data);
   };
@@ -77,6 +176,7 @@ export default function MenuTambahLampiran({
         setPreviewUrl(blobUrl);
       } else {
         const blobUrl = await addFooter(
+          jenisLaporan,
           footer.width,
           footer.x,
           footer.y,
@@ -117,11 +217,18 @@ export default function MenuTambahLampiran({
       const pdfDoc = await PDFDocument.load(fileDataRef.current);
       const jumlahHalaman = pdfDoc.getPageCount();
 
-      if (isCALK && (!halamanTerakhirCALK || halamanTerakhirCALK <= 0)) {
-        return alert("Set jumlah halaman terakhir CALK terlebih dahulu!");
-      }
-      if (isCALK && halamanTerakhirCALK > jumlahHalaman) {
-        return alert("Jumlah halaman CALK melebihi total halaman file PDF!");
+      if (
+        jenisLaporan === JenisLaporan.RAPERDA ||
+        jenisLaporan === JenisLaporan.PERDA
+      ) {
+        if (isCALK && (!halamanTerakhirCALK || halamanTerakhirCALK <= 0)) {
+          return alert("Set jumlah halaman terakhir CALK terlebih dahulu!");
+        }
+        if (isCALK && halamanTerakhirCALK > jumlahHalaman) {
+          return alert("Jumlah halaman CALK melebihi total halaman file PDF!");
+        }
+      } else {
+        setHalamanTerakhirCALK(jumlahHalaman);
       }
 
       // ----- BAGIAN PENTING: KIRIM FILE KE API -----
@@ -235,7 +342,21 @@ export default function MenuTambahLampiran({
             <fieldset className="border p-5 border-blue-800 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-4">
               <legend className="px-2 font-semibold">INFORMASI LAMPIRAN</legend>
 
-              <div className="col-span-5 flex items-center justify-between px-2">
+              {/* <div
+                className={`p-2 col-span-5 bg-blue-200 max-w-fit rounded-sm cursor-pointer hover:bg-blue-300 border border-s-gray-500`}
+                onClick={() => setOpenUploadModal(true)}
+              >
+                Tambahkan Daftar Isi Lampiran
+              </div> */}
+
+              <div
+                className={`col-span-5 flex items-center justify-between px-2 ${
+                  jenisLaporan === JenisLaporan.RAPERDA ||
+                  jenisLaporan === JenisLaporan.PERDA
+                    ? ""
+                    : "hidden"
+                }`}
+              >
                 <div className="flex flex-col gap-y-3 w-full">
                   <label className="font-medium mb-1 block">
                     <input
@@ -280,6 +401,42 @@ export default function MenuTambahLampiran({
                         } text-white px-2 py-1 rounded-md max-w-[300px] sm:w-auto`}
                       >
                         Atur Daftar Halaman CALK
+                      </button>
+                    </div>
+                  </span>
+                </div>
+              </div>
+
+              <div
+                className={`col-span-5 flex items-center justify-between px-2 ${
+                  jenisLaporan === JenisLaporan.RAPERBUP ||
+                  jenisLaporan === JenisLaporan.PERBUP
+                    ? ""
+                    : "hidden"
+                }`}
+              >
+                <div className="flex flex-col gap-y-3 w-full">
+                  <label className="font-medium mb-1 block">
+                    <input
+                      type="checkbox"
+                      checked={isCALK}
+                      onChange={() => setIsCALK(!isCALK)}
+                      className="mr-2"
+                    />
+                    Tambahkan Daftar Isi Khusus
+                  </label>
+                  <span className={`${isCALK ? "" : "hidden"}`}>
+                    <div className="flex flex-col gap-y-3">
+                      <button
+                        disabled={!isCALK}
+                        onClick={() => setIsOpenVariasiLampiranRaperbup(true)}
+                        className={`${
+                          isCALK
+                            ? "bg-blue-700 hover:bg-blue-800"
+                            : "bg-gray-400"
+                        } text-white px-2 py-1 rounded-md max-w-[300px] sm:w-auto`}
+                      >
+                        Atur Daftar Halaman
                       </button>
                     </div>
                   </span>
@@ -367,6 +524,19 @@ export default function MenuTambahLampiran({
         )}
       </div>
 
+      {/* Modal untuk Upload PDF Lampiran  */}
+      <UploadModalTambahLampiran
+        updateOPDBLampiranById={updateOPDBLampiranById}
+        daftarOPDAndFile={daftarOPDAndFile}
+        isOpen={openUploadModal}
+        onClose={() => setOpenUploadModal(false)}
+        onFileSelected={(file, arrayBuffer) => {
+          setFile(file);
+          fileDataRef.current = arrayBuffer;
+          regeneratePdf();
+        }}
+      />
+
       {/* Preview PDF */}
       {previewUrl && (
         <div className="w-full h-[600px] shadow-lg rounded-xl overflow-hidden border border-gray-300">
@@ -377,6 +547,14 @@ export default function MenuTambahLampiran({
       {openCALKModal && (
         <CalkStructureModal
           onClose={() => setOpenCALKModal(false)}
+          initialData={babCALK}
+          onAddLampiranUtamaCALK={onAddLampiranUtamaCALK}
+        />
+      )}
+
+      {isOpenVariasiLampiranRaperbup && (
+        <LampiranUtamaVariasiRaperbupModal
+          onClose={() => setIsOpenVariasiLampiranRaperbup(false)}
           initialData={babCALK}
           onAddLampiranUtamaCALK={onAddLampiranUtamaCALK}
         />

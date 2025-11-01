@@ -17,6 +17,7 @@ export enum MenuOption {
   BATANG_TUBUH = "Batang Tubuh",
   LAMPIRAN_UTAMA = "Lampiran Utama",
   TAMBAH_LAMPIRAN_UTAMA = "Tambah Lampiran Utama",
+  TAMBAH_LAMPIRAN_UTAMA_PER_OPD = "Tambah Lampiran Utama Per OPD",
   TAMBAH_LAMPIRAN_UTAMA_CALK = "Tambah Lampiran Utama CALK",
   EDIT_LAMPIRAN_UTAMA = "Edit Lampiran Utama",
   LAMPIRAN_PENDUKUNG = "Lampiran Pendukung",

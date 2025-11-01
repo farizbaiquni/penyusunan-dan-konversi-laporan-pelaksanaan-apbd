@@ -5,6 +5,7 @@ import {
   setDoc,
   Timestamp,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { LampiranDataUtamaFirestore } from "@/app/_types/types";
 import { db } from "../firebase";
@@ -134,5 +135,36 @@ export async function editLampiranUtamaFirestore(
   } catch (error) {
     console.error("Gagal mengedit lampiran utama:", error);
     return { success: false, error };
+  }
+}
+
+export async function updateOrderLampiran(
+  dokumenId: string,
+  updates: { id: string; urutan: number }[]
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const batch = writeBatch(db);
+
+    updates.forEach((item) => {
+      const ref = doc(db, "dokumenLaporan", dokumenId, "lampirans", item.id);
+      batch.update(ref, { urutan: item.urutan }); // pakai nama field sesuai konteksmu
+    });
+
+    await batch.commit();
+
+    return {
+      success: true,
+      message: `Berhasil memperbarui ${updates.length} lampiran.`,
+    };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    console.error("Gagal memperbarui lampiran:", error);
+
+    return {
+      success: false,
+      message: `Gagal memperbarui lampiran: ${
+        error.message || "Terjadi kesalahan tak terduga."
+      }`,
+    };
   }
 }

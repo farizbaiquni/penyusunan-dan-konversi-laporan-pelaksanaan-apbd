@@ -1,23 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { PlusIcon, TrashIcon, XMarkIcon } from "@heroicons/react/24/outline";
 import { BabCalk, SubbabCalk } from "@/app/_types/types";
 
-interface CalkStructureModalProps {
+interface LampiranUtamaVariasiRaperbupModalProps {
   onClose: () => void;
   initialData?: BabCalk[];
   onAddLampiranUtamaCALK: (data: BabCalk[]) => void;
 }
 
 /* ====================== MODAL ====================== */
-export default function CalkStructureModal({
+export default function LampiranUtamaVariasiRaperbupModal({
   onClose,
   initialData = [],
   onAddLampiranUtamaCALK,
-}: CalkStructureModalProps) {
-  const [babs, setBabs] = useState<BabCalk[]>(initialData);
+}: LampiranUtamaVariasiRaperbupModalProps) {
+  const [babs, setBabs] = useState<BabCalk[]>([]);
 
   /* 🔢 Konversi angka ke romawi */
   function romanize(num: number): string {
@@ -61,25 +61,23 @@ export default function CalkStructureModal({
     return Array(+digits.join("") + 1).join("M") + roman;
   }
 
-  /* 🧩 Tambah Bab */
-  const addBab = () => {
-    setBabs((prev) => {
-      const nextIndex = prev.length + 1;
-      const newBab: BabCalk = {
+  /* 🧩 Set default Bab I ketika modal pertama kali dibuka */
+  useEffect(() => {
+    if (initialData.length > 0) {
+      setBabs(initialData);
+    } else {
+      const babI: BabCalk = {
         id: crypto.randomUUID(),
-        bab: romanize(nextIndex),
+        bab: romanize(1),
         judul: "",
         halamanMulai: 1,
         subbabs: [],
       };
-      return [...prev, newBab];
-    });
-  };
+      setBabs([babI]);
+    }
+  }, [initialData]);
 
-  /* ❌ Hapus Bab */
-  const deleteBab = (index: number) => {
-    setBabs((prev) => prev.filter((_, i) => i !== index));
-  };
+  const generateLampiranUtamaunutk = () => {};
 
   /* ➕ Tambah Subbab */
   const addSubbab = (babIndex: number) => {
@@ -162,7 +160,7 @@ export default function CalkStructureModal({
         {/* 🔹 Header Modal */}
         <div className="flex justify-between items-center mb-4 border-b border-gray-200 pb-2">
           <h2 className="text-lg font-semibold text-gray-800">
-            Struktur Lampiran Utama CALK
+            Penomoran Halaman Daftar Isi
           </h2>
           <button
             onClick={onClose}
@@ -180,21 +178,13 @@ export default function CalkStructureModal({
               className="border border-gray-200 rounded-lg p-4 bg-gray-50"
             >
               <div className="flex justify-between items-center mb-2">
-                <h3 className="font-medium text-gray-700">
-                  BAB {bab.bab || romanize(i + 1)}
-                </h3>
-                <button
-                  onClick={() => deleteBab(i)}
-                  className="text-red-400 hover:text-red-600"
-                >
-                  <TrashIcon className="w-4 h-4" />
-                </button>
+                <h3 className="font-medium text-gray-700">BAB</h3>
               </div>
 
               <div className="grid sm:grid-cols-3 gap-2 mb-2">
                 <input
                   type="text"
-                  placeholder="Judul Bab"
+                  placeholder="Judul BAB"
                   value={bab.judul}
                   onChange={(e) => updateBabField(i, "judul", e.target.value)}
                   className="col-span-2 border rounded-md px-2 py-1 text-sm"
@@ -202,7 +192,7 @@ export default function CalkStructureModal({
                 <input
                   type="number"
                   min={1}
-                  max={1000000}
+                  max={206}
                   value={bab.halamanMulai}
                   onChange={(e) =>
                     updateBabField(i, "halamanMulai", Number(e.target.value))
@@ -217,12 +207,9 @@ export default function CalkStructureModal({
                     key={sub.id}
                     className="flex items-center gap-2 bg-white border border-gray-200 rounded-md px-2 py-1 text-sm"
                   >
-                    <span className="font-medium text-gray-600 w-6">
-                      {bab.bab}.{sub.subbab}
-                    </span>
                     <input
                       type="text"
-                      placeholder="Judul Subbab"
+                      placeholder="Nama OPD"
                       value={sub.judul}
                       onChange={(e) =>
                         updateSubbabField(i, j, "judul", e.target.value)
@@ -232,7 +219,7 @@ export default function CalkStructureModal({
                     <input
                       type="number"
                       min={1}
-                      max={206}
+                      max={100000}
                       value={sub.halamanMulai}
                       onChange={(e) =>
                         updateSubbabField(
@@ -258,26 +245,18 @@ export default function CalkStructureModal({
                   className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 mt-1"
                 >
                   <PlusIcon className="w-3.5 h-3.5" />
-                  Tambah Subbab
+                  Tambah OPD
                 </button>
               </div>
             </div>
           ))}
-
-          <button
-            onClick={addBab}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md text-sm"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Tambah Bab
-          </button>
         </div>
 
         {/* 🔹 Footer */}
         <div className="flex justify-end mt-4 border-t border-gray-200 pt-3">
           <button
             onClick={() => handleSave(babs)}
-            className="bg-green-600 hover:bg-green-700 font-bold  text-white px-4 py-1.5 rounded-md shadow-sm text-sm"
+            className="bg-green-600 hover:bg-green-700 font-bold text-white px-4 py-1.5 rounded-md shadow-sm text-sm"
           >
             Simpan Struktur
           </button>

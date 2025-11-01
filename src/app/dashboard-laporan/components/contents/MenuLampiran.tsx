@@ -16,6 +16,7 @@ import {
 } from "@/app/_types/types";
 import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 import LoadingProcessing from "@/app/_components/LoadingProcessing";
+import { updateOrderLampiran } from "@/app/_lib/_queries/lampiran";
 
 /* ============================================================
    INTERFACE
@@ -23,6 +24,7 @@ import LoadingProcessing from "@/app/_components/LoadingProcessing";
 interface LampiranManagerProps {
   tahun: number;
   jenisLaporan: JenisLaporan;
+  dokumenId: string;
   setActiveMenu: (menu: MenuOption) => void;
   lampirans: LampiranDataUtama[];
   onDeleteLampiran: (id: string) => void;
@@ -36,6 +38,7 @@ interface LampiranManagerProps {
 export default function MenuLampiran({
   tahun,
   jenisLaporan,
+  dokumenId,
   setActiveMenu,
   lampirans,
   onDeleteLampiran,
@@ -70,10 +73,21 @@ export default function MenuLampiran({
   }, []);
 
   // Simpan perubahan urutan lampiran
-  const handleSaveOrder = useCallback(() => {
+  const handleSaveOrder = async () => {
+    const updates = localOrder.map((item) => ({
+      id: item.id,
+      urutan: item.urutan,
+    }));
+
+    // Lalu panggil fungsi update batch-mu
+    const result = await updateOrderLampiran(dokumenId, updates);
+    if (!result.success) {
+      setShowOrderModal(false);
+      return alert(result.message);
+    }
     updateLampiranOrder(localOrder);
     setShowOrderModal(false);
-  }, [localOrder, updateLampiranOrder]);
+  };
 
   // Format ukuran file
   const formatFileSize = (size: number) =>
@@ -126,9 +140,9 @@ export default function MenuLampiran({
           Belum ada lampiran yang ditambahkan.
         </p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
+        <div className="overflow-x-auto rounded-md border border-gray-200">
           <table className="w-full text-sm text-gray-700 border-collapse">
-            <thead className="bg-gray-100 text-gray-700 sticky top-0">
+            <thead className="bg-gray-300 text-gray-900 sticky top-0">
               <tr>
                 <th className="px-4 py-2 text-center">No.</th>
                 <th className="px-4 py-2 text-left">Nama File</th>

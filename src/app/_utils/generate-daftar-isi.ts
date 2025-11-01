@@ -1,7 +1,8 @@
 import { PDFDocument, PDFFont, PDFPage, rgb, StandardFonts } from "pdf-lib";
-import { DaftarIsiLampiran, BabCalk } from "../_types/types";
+import { DaftarIsiLampiran, BabCalk, JenisLaporan } from "../_types/types";
 
 export async function generateDaftarIsi(
+  jenisLaporan: JenisLaporan,
   tahun: number,
   entries: DaftarIsiLampiran[],
   pdfDoc: PDFDocument
@@ -172,24 +173,28 @@ export async function generateDaftarIsi(
 
       // Garis horizontal penuh dari margin kiri ke margin kanan
       page.drawLine({
-        start: { x: marginLeft, y: lastY - 3 },
-        end: { x: pageWidth - marginRight, y: lastY - 3 },
+        start: { x: marginLeft, y: lastY - 5 },
+        end: { x: pageWidth - marginRight, y: lastY - 5 },
         thickness: 0.5,
         color: rgb(0.3, 0.3, 0.3),
       });
 
       // Kurangi jarak antar entry, agar lebih rapat
-      currentY = lastY - 6;
+      currentY = lastY - 10;
     }
 
     for (const bab of babs) {
-      if (currentY < bottomMargin) {
-        page = pdfDoc.addPage([width, height]);
-        currentY = height - 100;
+      if (
+        jenisLaporan === JenisLaporan.RAPERDA ||
+        jenisLaporan === JenisLaporan.PERDA
+      ) {
+        if (currentY < bottomMargin) {
+          page = pdfDoc.addPage([width, height]);
+          currentY = height;
+        }
+        const babText = ` BAB ${bab.bab}. ${bab.judul}`;
+        drawCalkEntry(babText, bab.halamanMulai, fontRegular, babIndent);
       }
-
-      const babText = `BAB ${bab.bab}. ${bab.judul}`;
-      drawCalkEntry(babText, bab.halamanMulai, fontRegular, babIndent);
 
       if (bab.subbabs) {
         for (const sub of bab.subbabs) {
@@ -198,7 +203,12 @@ export async function generateDaftarIsi(
             currentY = height - 100;
           }
 
-          const subText = `${bab.bab}.${sub.subbab} ${sub.judul}`;
+          const subText =
+            (jenisLaporan === JenisLaporan.RAPERDA ||
+            jenisLaporan === JenisLaporan.PERDA
+              ? `${bab.bab}.${sub.subbab} `
+              : "") + sub.judul;
+
           drawCalkEntry(subText, sub.halamanMulai, fontRegular, subIndent);
         }
       }

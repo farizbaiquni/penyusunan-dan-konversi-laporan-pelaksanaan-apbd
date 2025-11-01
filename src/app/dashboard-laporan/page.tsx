@@ -278,6 +278,7 @@ export default function Home() {
       <Lampiran
         tahun={tahun}
         jenisLaporan={jenisLaporan}
+        dokumenId={dokumenIdFirestore}
         setActiveMenu={setActiveMenu}
         lampirans={lampiranUtamaManager.lampirans}
         onDeleteLampiran={(lampiranId) =>

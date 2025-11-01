@@ -23,8 +23,8 @@ export default function Header({ rightContent }: HeaderProps) {
               TUNTAS
             </h1>
             <p className="text-sm text-gray-200">
-              Tata Kelola Naskah Pertanggungjawaban Pelaksanaan Terotomatisasi
-              dan Sistematis
+              Tata Kelola Naskah Pertanggungjawaban Pelaksanaan APBD
+              Terotomatisasi dan Sistematis
             </p>
           </div>
         </div>

@@ -119,7 +119,7 @@ export default function MenuPreview({
         const entries: DaftarIsiLampiran[] = await generateEntriesFromLampiran(
           lampirans
         );
-        generateDaftarIsi(2025, entries, finalPdf);
+        generateDaftarIsi(jenisLaporan, 2025, entries, finalPdf);
 
         let currentPageNumber = 1;
         for (const lampiran of lampirans) {
@@ -161,14 +161,24 @@ export default function MenuPreview({
 
           currentY -= 20;
           drawCenteredText("NOMOR 1 TAHUN 2025", currentY, 15);
+          // 🔹 Setelah bagian NOMOR 1 TAHUN 2025
           currentY -= 120;
-          drawCenteredText("RINGKASAN LAPORAN REALISASI", currentY, 22, true);
-          currentY -= 30;
-          drawCenteredText("ANGGARAN MENURUT URUSAN", currentY, 22, true);
-          currentY -= 30;
-          drawCenteredText("PEMERINTAHAN DAERAH DAN", currentY, 22, true);
-          currentY -= 30;
-          drawCenteredText("ORGANISASI", currentY, 22, true);
+
+          // Ambil teks dari pengguna (misal dari form input textarea)
+          const judulLampiranText = lampiran.judulPembatasLampiran || "";
+
+          // Pisahkan per baris (split berdasarkan newline)
+          const judulLines = judulLampiranText
+            .split("\n")
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+
+          // Tampilkan tiap baris teks dengan jarak antarbaris
+          const lineSpacing = 30;
+          judulLines.forEach((line) => {
+            drawCenteredText(line, currentY, 22, true);
+            currentY -= lineSpacing;
+          });
           currentY = 60;
           drawCenteredText(`TAHUN ANGGARAN ${2025}`, currentY, 16);
 
@@ -241,10 +251,7 @@ export default function MenuPreview({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batangTubuh, lampirans]);
 
-  // bersihkan URL saat komponen unmount
   useEffect(() => {
-    console.log("first");
-    console.log(lampirans);
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
-  DocumentTextIcon,
   EyeIcon,
   PencilIcon,
   ArrowDownTrayIcon,
@@ -20,13 +19,11 @@ import {
 import { useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { getDokumenLaporanByTahun } from "@/app/_lib/_queries/dokument-laporan";
-import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function DashboardPage() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const tahunParam = searchParams.get("tahun");
-  const jenisLaporanParam = searchParams.get("jenis-laporan");
 
   const tahun = tahunParam
     ? parseInt(tahunParam, 10)
@@ -178,7 +175,6 @@ export default function DashboardPage() {
                       "bg-red-100 text-red-600 border-red-200",
                   } as const;
 
-                  const Icon = DocumentTextIcon;
                   const statusClass = statusColors[doc.status];
 
                   return (
@@ -190,7 +186,12 @@ export default function DashboardPage() {
 
                       <div className="flex items-center gap-4">
                         <div className="p-3 bg-blue-50 rounded-md group-hover:bg-blue-100 transition-colors duration-300">
-                          <Icon className="w-8 h-8 text-blue-700" />
+                          <Image
+                            src="/images/open-book.png"
+                            width={50}
+                            height={50}
+                            alt="document"
+                          />
                         </div>
                         <div>
                           <h3 className="text-md font-semibold text-gray-800 group-hover:text-blue-700 transition-colors duration-300">

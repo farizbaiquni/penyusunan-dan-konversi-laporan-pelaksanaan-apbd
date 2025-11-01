@@ -58,7 +58,7 @@ export default function MenuInformasiLaporan({
     setNamaBupati(inputNama);
 
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000); // hilang otomatis
+    setTimeout(() => setSaved(false), 2000);
   };
 
   return (
@@ -78,7 +78,7 @@ export default function MenuInformasiLaporan({
             jenisLaporan === JenisLaporan.RAPERDA ||
             jenisLaporan === JenisLaporan.RAPERBUP
               ? "hidden"
-              : "bg-white border-t-4 border-blue-500 rounded-sm p-5 shadow-sm mb-6"
+              : "bg-white border-t-4 rounded-sm p-5 shadow-sm mb-6"
           }`}
         >
           <h3 className="text-sm font-semibold text-gray-700 mb-3">
@@ -146,29 +146,22 @@ export default function MenuInformasiLaporan({
             <InfoCard
               label="Jumlah Lampiran Pendukung"
               value={`${jumlahLampiranPendukung} dokumen`}
-              icon="📎"
+              icon="📋"
             />
-            {jenisLaporan !== JenisLaporan.RAPERDA &&
-              jenisLaporan !== JenisLaporan.RAPERBUP && (
-                <>
-                  <StatusCard isUpload={isUploadBatangTubuh} />
-                  <InfoCard
-                    label={`Nomor ${generateTextJenisLaporan(jenisLaporan)}`}
-                    value={
-                      inputNomor ? `No. ${inputNomor}` : "Belum ditentukan"
-                    }
-                    icon="🧾"
-                    muted={!inputNomor}
-                  />
-                </>
-              )}
-
-            {/* <InfoCard label="Nama Bupati" value={inputNama} icon="🏛️" />
-            <InfoCard
-              label={`Tahun  ${generateTextJenisLaporan(jenisLaporan)}`}
-              value={`${inputTahun}`}
-              icon="📅"
-            /> */}
+            <>
+              <StatusCard isUpload={isUploadBatangTubuh} />
+              <InfoCard
+                label={`Nomor ${generateTextJenisLaporan(jenisLaporan)}`}
+                value={
+                  jenisLaporan !== JenisLaporan.RAPERDA &&
+                  jenisLaporan !== JenisLaporan.RAPERBUP
+                    ? `No. ${inputNomor}`
+                    : "Belum ditentukan"
+                }
+                icon="🧾"
+                muted={!inputNomor}
+              />
+            </>
           </div>
         </section>
       </div>
@@ -197,7 +190,7 @@ function InfoCard({ label, value, icon, muted, highlight }: InfoCardProps) {
         <span className="text-gray-600 text-sm font-medium">{label}</span>
       </div>
       <span
-        className={`text-base font-semibold ${
+        className={`text-base font-semibold ml-[4px] ${
           muted ? "text-gray-400 italic" : "text-gray-800"
         }`}
       >
@@ -212,7 +205,7 @@ function StatusCard({ isUpload }: { isUpload: boolean }) {
   return (
     <div className="flex flex-col bg-white rounded-sm p-4 border border-gray-100 shadow-sm hover:shadow-md transition">
       <div className="flex items-center gap-2 mb-1">
-        <span className="text-lg">📤</span>
+        <span className="text-lg">📑</span>
         <span className="text-gray-600 text-sm font-medium">
           Status Upload Batang Tubuh
         </span>
@@ -220,14 +213,14 @@ function StatusCard({ isUpload }: { isUpload: boolean }) {
       <div className="flex items-center gap-2 mt-1">
         {isUpload ? (
           <>
-            <CheckCircleIcon className="h-5 w-5 text-green-500" />
+            <CheckCircleIcon className="ml-[2px] h-5 w-5 text-green-700" />
             <span className="text-green-700 font-semibold text-sm">
               Sudah Upload
             </span>
           </>
         ) : (
           <>
-            <XCircleIcon className="h-5 w-5 text-red-500" />
+            <XCircleIcon className="ml-[2px] h-5 w-5 text-red-800" />
             <span className="text-red-700 font-semibold text-sm">
               Belum Upload
             </span>

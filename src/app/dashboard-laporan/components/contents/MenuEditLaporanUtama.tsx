@@ -10,6 +10,7 @@ import {
 import { addFooter, addFooterLampiranCALK } from "@/app/_utils/add-footers";
 import {
   BabCalk,
+  JenisLaporan,
   LampiranDataUtama,
   LampiranDataUtamaFirestore,
   MenuOption,
@@ -25,7 +26,7 @@ interface EditLampiranUtamaProps {
   lampiran: LampiranDataUtama;
   onEditLampiranUtama: (updated: LampiranDataUtama) => void;
   tahun: number;
-  jenisLaporan: string;
+  jenisLaporan: JenisLaporan;
 }
 
 export default function MenuEditLampiranUtama({
@@ -67,6 +68,7 @@ export default function MenuEditLampiranUtama({
   };
 
   const generatePreview = async () => {
+    jenisLaporan: JenisLaporan;
     const file = newFile ?? lampiran.file;
     if (!file) return;
     const buffer = await file.arrayBuffer();
@@ -85,6 +87,7 @@ export default function MenuEditLampiranUtama({
       );
     } else {
       url = await addFooter(
+        jenisLaporan,
         footer.width,
         footer.x,
         footer.y,
@@ -150,7 +153,7 @@ export default function MenuEditLampiranUtama({
       footerHeight: footer.height,
       jumlahHalaman: lampiran.jumlahHalaman,
       isCALK: lampiran.isCALK,
-      babs: lampiran.babs,
+      babs: babCALK,
       jumlahTotalLembar: lampiran.jumlahTotalLembar,
     };
 

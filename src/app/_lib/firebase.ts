@@ -1,20 +1,7 @@
-// src/lib/firebase.ts
-import { initializeApp, getApps, FirebaseApp } from "firebase/app";
+import { initializeApp, getApp, getApps, FirebaseApp } from "firebase/app";
 import { getFirestore, Firestore } from "firebase/firestore";
 
-// Gunakan interface untuk environment config agar tipe aman
-interface FirebaseConfig {
-  apiKey: string;
-  authDomain: string;
-  projectId: string;
-  storageBucket: string;
-  messagingSenderId: string;
-  appId: string;
-  measurementId: string;
-}
-
-// Ambil dari environment variables (Next.js best practice)
-const firebaseConfig: FirebaseConfig = {
+const firebaseConfig = {
   apiKey: "AIzaSyCQBk5K-aGOHLtCChZZmaAmAJ4QYPinsCM",
   authDomain: "tuntas-perda-perbup.firebaseapp.com",
   projectId: "tuntas-perda-perbup",
@@ -24,11 +11,10 @@ const firebaseConfig: FirebaseConfig = {
   measurementId: "G-PY2J3ZPVZ7",
 };
 
-// Pastikan Firebase tidak diinisialisasi lebih dari sekali
-const app: FirebaseApp = !getApps().length
-  ? initializeApp(firebaseConfig)
-  : getApps()[0];
+// Fungsi helper untuk ambil instance tunggal
+const getFirebaseApp = (): FirebaseApp => {
+  return getApps().length ? getApp() : initializeApp(firebaseConfig);
+};
 
-// Export Firestore
+export const app = getFirebaseApp();
 export const db: Firestore = getFirestore(app);
-export default app;

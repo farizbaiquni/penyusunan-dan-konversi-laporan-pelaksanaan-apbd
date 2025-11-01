@@ -1,6 +1,8 @@
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
+import { JenisLaporan } from "../_types/types";
 
 export const addFooter = async (
+  jenisLaporan: JenisLaporan,
   footerWidth: number,
   footerX: number,
   footerY: number,
@@ -13,7 +15,7 @@ export const addFooter = async (
   const pdfDoc = await PDFDocument.load(existingPdfBytes);
   const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const pages = pdfDoc.getPages();
-  const text = `PERDA ${romawiLampiran}. ${footerText}`.toUpperCase();
+  const text = footerText;
 
   pages.forEach((page, index) => {
     const { width } = page.getSize();
@@ -82,7 +84,7 @@ export async function addFooterToPages(
     const boxWidth = (width * footerWidth) / 100;
     const xPos = (width - boxWidth) / 2 + footerX;
     const yPos = footerY;
-    const text = `PERDA ${romawiLampiran}. ${footerText}`.toUpperCase();
+    const text = footerText;
 
     // Kotak footer
     page.drawRectangle({
