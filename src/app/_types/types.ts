@@ -101,7 +101,18 @@ export interface LampiranDataUtamaFirestore {
 export interface LampiranDataPendukung {
   id: string;
   urutan: number;
+  namaFileAsli: string;
+  namaFileDiStorageLokal: string;
   file: File;
+  judul: string;
+  jumlahTotalLembar: number;
+}
+
+export interface LampiranDataPendukungFirestore {
+  id: string;
+  urutan: number;
+  namaFileAsli: string;
+  namaFileDiStorageLokal: string;
   judul: string;
   jumlahTotalLembar: number;
 }

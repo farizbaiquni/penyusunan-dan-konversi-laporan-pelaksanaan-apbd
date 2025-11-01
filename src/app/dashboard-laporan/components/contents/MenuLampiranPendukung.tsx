@@ -15,11 +15,13 @@ import {
 } from "@/app/_types/types";
 import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
 import OrderLampiranPendukungModal from "../../modals/OrderLampiranPendukungModal";
+import { deleteLampiranPendukungFirestore } from "@/app/_lib/_queries/lampiran-pendukung";
 
 /* ============================================================
    INTERFACE
 ============================================================ */
 interface LampiranManagerProps {
+  dokumenId: string;
   tahun: number;
   jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
@@ -33,6 +35,7 @@ interface LampiranManagerProps {
    KOMPONEN UTAMA
 ============================================================ */
 export default function MenuLampiranPendukung({
+  dokumenId,
   tahun,
   jenisLaporan,
   setActiveMenu,
@@ -45,10 +48,22 @@ export default function MenuLampiranPendukung({
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<LampiranDataPendukung[]>([]);
 
-  // Sinkronisasi order lokal dengan props
-  useEffect(() => {
-    setLocalOrder([...lampirans]);
-  }, [lampirans]);
+  const handleClickDeleteLampiranPendukung = async (
+    idLampiran: string,
+    namaFile: string
+  ) => {
+    const data = await deleteLampiranPendukungFirestore(dokumenId, idLampiran);
+    if (!data.success) {
+      return alert(data.message);
+    }
+    const url = `/api/lampiran-pendukung/delete-lampiran-pendukung?tahun=${tahun}&jenisLaporan=${jenisLaporan}&namaFile=${namaFile}`;
+    const res = await fetch(url, { method: "DELETE" });
+    const dataRes = await res.json();
+    if (!dataRes.success) {
+      return alert("Gagal menghapus lampiran di storage : " + dataRes.message);
+    }
+    onDeleteLampiran(idLampiran);
+  };
 
   // Fungsi untuk mengubah urutan lampiran
   const moveItem = useCallback((index: number, direction: "up" | "down") => {
@@ -86,6 +101,11 @@ export default function MenuLampiranPendukung({
       if (previewURL) URL.revokeObjectURL(previewURL);
     };
   }, [previewURL]);
+
+  // Sinkronisasi order lokal dengan props
+  useEffect(() => {
+    setLocalOrder([...lampirans]);
+  }, [lampirans]);
 
   /* ============================================================
      RENDER
@@ -147,7 +167,7 @@ export default function MenuLampiranPendukung({
                     className="px-4 py-2 truncate max-w-[180px]"
                     title={l.file.name}
                   >
-                    {l.file.name}
+                    {l.namaFileAsli}
                   </td>
 
                   <td className="px-4 py-2">{l.jumlahTotalLembar}</td>
@@ -177,7 +197,12 @@ export default function MenuLampiranPendukung({
 
                       {/* Hapus */}
                       <button
-                        onClick={() => onDeleteLampiran(l.id)}
+                        onClick={() =>
+                          handleClickDeleteLampiranPendukung(
+                            l.id,
+                            l.namaFileDiStorageLokal
+                          )
+                        }
                         className="flex items-center gap-1 text-red-600 hover:text-red-700 transition font-medium"
                       >
                         <TrashIcon className="w-4 h-4" />

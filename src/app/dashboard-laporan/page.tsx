@@ -49,6 +49,10 @@ function useLampiranManager<T extends { id: string; urutan: number }>(
     );
   };
 
+  const deleteLampiranPendukug = (lampiranId: string) => {
+    setLampirans((prev) => prev.filter((l) => l.id !== lampiranId));
+  };
+
   // Hapus lampiran
   const deleteLampiran = async (
     lampiranId: string,
@@ -97,6 +101,7 @@ function useLampiranManager<T extends { id: string; urutan: number }>(
     deleteLampiran,
     reorderLampiran,
     setLampiransWithOrder,
+    deleteLampiranPendukug,
   };
 }
 
@@ -320,18 +325,12 @@ export default function Home() {
     ),
     [MenuOption.LAMPIRAN_PENDUKUNG]: (
       <MenuLampiranPendukung
+        dokumenId={dokumenIdFirestore}
         tahun={tahun}
         jenisLaporan={jenisLaporan}
         setActiveMenu={setActiveMenu}
         lampirans={lampiranPendukungManager.lampirans}
-        onDeleteLampiran={(lampiranId) =>
-          lampiranUtamaManager.deleteLampiran(
-            lampiranId,
-            dokumenIdFirestore,
-            tahun,
-            jenisLaporan
-          )
-        }
+        onDeleteLampiran={lampiranPendukungManager.deleteLampiranPendukug}
         updateLampiranOrder={lampiranPendukungManager.reorderLampiran}
         handleOnClickEditLampiran={(lampiran) => {
           lampiranPendukungManager.setEditedLampiran(lampiran);
@@ -341,6 +340,8 @@ export default function Home() {
     ),
     [MenuOption.TAMBAH_LAMPIRAN_PENDUKUNG]: (
       <MenuTambahLampiranPendukung
+        dokumenId={dokumenIdFirestore}
+        tahun={tahun}
         jenisLaporan={jenisLaporan}
         setActiveMenu={setActiveMenu}
         onAddLampiran={lampiranPendukungManager.addLampiran}

@@ -33,7 +33,6 @@ export async function getDokumenLaporanByTahunAndJenisLaporanWithLampirans(
     where("tahun", "==", tahun),
     where("jenisLaporan", "==", jenisLaporan.toLowerCase())
   );
-  console.log(tahun, jenisLaporan);
   const snapshot = await getDocs(q);
   if (snapshot.empty) return [];
 
@@ -102,19 +101,52 @@ export async function getDokumenLaporanByTahunAndJenisLaporanWithLampirans(
     });
 
     // === Fetch lampirans pendukung ===
+    const urlGetLampiransPendukung: string = `/api/lampiran-pendukung/get-lampiran-pendukung?tahun=${tahun}&jenisLaporan=${jenisLaporan.toLowerCase()}`;
+    const resGetLampiransPendukung = await fetch(urlGetLampiransPendukung);
+    const dataGetLampiransPendukung = await resGetLampiransPendukung.json();
+    let filesGetLampiransPendukung: File[] = [];
+    if (dataGetLampiransPendukung.success) {
+      filesGetLampiransPendukung = dataGetLampiransPendukung.files.map(
+        (f: { name: string; data: string }) => {
+          const byteString = atob(f.data);
+          const arrayBuffer = new Uint8Array(byteString.length);
+          for (let i = 0; i < byteString.length; i++) {
+            arrayBuffer[i] = byteString.charCodeAt(i);
+          }
+          return new File([arrayBuffer], f.name, { type: "application/pdf" });
+        }
+      );
+    }
+
     const lampiransPendukungCol = collection(
       db,
       `dokumenLaporan/${docSnap.id}/lampiransPendukung`
     );
     const lampiransPendukungSnapshot = await getDocs(lampiransPendukungCol);
     const lampiransPendukung: LampiranDataPendukung[] =
-      lampiransPendukungSnapshot.docs.map(
-        (l) =>
-          ({
-            id: l.id,
-            ...l.data(),
-          } as LampiranDataPendukung)
-      );
+      lampiransPendukungSnapshot.docs
+        .map((l) => {
+          const lampiranDataPendukung = l.data();
+          const lampiranFilePendukung = filesGetLampiransPendukung.find(
+            (f) =>
+              f.name === lampiranDataPendukung.namaFileDiStorageLokal + ".pdf"
+          );
+
+          if (lampiranFilePendukung !== undefined) {
+            return {
+              id: lampiranDataPendukung.id,
+              urutan: lampiranDataPendukung.urutan,
+              namaFileAsli: lampiranDataPendukung.namaFileAsli,
+              namaFileDiStorageLokal:
+                lampiranDataPendukung.namaFileDiStorageLokal,
+              file: lampiranFilePendukung,
+              judul: lampiranDataPendukung.judul,
+              jumlahTotalLembar: lampiranDataPendukung.jumlahTotalLembar,
+            } as LampiranDataPendukung;
+          }
+          return undefined; // penting, agar map konsisten
+        })
+        .filter((item): item is LampiranDataPendukung => item !== undefined); // hilangkan undefined
 
     result.push({
       id: data.id || docSnap.id,

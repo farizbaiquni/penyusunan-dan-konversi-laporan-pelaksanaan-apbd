@@ -10,8 +10,11 @@ import {
   MenuOption,
 } from "@/app/_types/types";
 import { generateTextJenisLaporan } from "@/app/_utils/jenis-laporan";
+import { addLampiranPendukungFirestore } from "@/app/_lib/_queries/lampiran-pendukung";
 
 interface TambahLampiranProps {
+  dokumenId: string;
+  tahun: number;
   jenisLaporan: JenisLaporan;
   setActiveMenu: (menu: MenuOption) => void;
   onAddLampiran: (data: LampiranDataPendukung) => void;
@@ -19,6 +22,8 @@ interface TambahLampiranProps {
 }
 
 export default function MenuTambahLampiranPendukung({
+  dokumenId,
+  tahun,
   jenisLaporan,
   setActiveMenu,
   onAddLampiran,
@@ -71,23 +76,61 @@ export default function MenuTambahLampiranPendukung({
       return alert("Unggah file PDF terlebih dahulu!");
 
     try {
+      const namaFile = uuidv4();
       const pdfDoc = await PDFDocument.load(fileDataRef.current);
       const jumlahHalaman = pdfDoc.getPageCount();
 
       const newLampiran: LampiranDataPendukung = {
-        id: uuidv4().toString(),
+        id: namaFile,
+        namaFileAsli: file.name,
+        namaFileDiStorageLokal: namaFile,
         urutan: urutanLampiran + 1,
         file,
         judul,
         jumlahTotalLembar: jumlahHalaman,
       };
 
+      const { success, lampiranId } = await addLampiranPendukungFirestore(
+        dokumenId,
+        newLampiran,
+        file.name,
+        namaFile
+      );
+
+      newLampiran.id =
+        lampiranId !== undefined ? lampiranId : namaFile.toString();
+
+      if (!success) {
+        alert("Gagal menyimpan lampiran pendukung.");
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("tahun", tahun.toString());
+      formData.append("jenisLaporan", jenisLaporan);
+      formData.append("namaFile", namaFile);
+
+      const res = await fetch(
+        "/api/lampiran-pendukung/add-lampiran-pendukung",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      const data = await res.json();
+      if (!data.success) {
+        alert("Gagal menyimpan lampiran pendukung.");
+        return;
+      }
+
       onAddLampiran(newLampiran);
       alert(`Lampiran "${file.name}" berhasil ditambahkan!`);
       setActiveMenu(MenuOption.LAMPIRAN_PENDUKUNG);
     } catch (err) {
       console.error(err);
-      alert("Gagal menyimpan lampiran.");
+      alert("Gagal menyimpan lampiran pendukung.");
     }
   };
 

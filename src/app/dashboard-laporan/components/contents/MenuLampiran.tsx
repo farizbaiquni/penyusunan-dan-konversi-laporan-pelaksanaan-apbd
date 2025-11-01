@@ -50,11 +50,6 @@ export default function MenuLampiran({
   const [previewURL, setPreviewURL] = useState<string | null>(null);
   const [localOrder, setLocalOrder] = useState<LampiranDataUtama[]>([]);
 
-  // Sinkronisasi order lokal dengan props
-  useEffect(() => {
-    setLocalOrder([...lampirans]);
-  }, [lampirans]);
-
   // Fungsi untuk mengubah urutan lampiran
   const moveItem = useCallback((index: number, direction: "up" | "down") => {
     setLocalOrder((prev) => {
@@ -103,6 +98,11 @@ export default function MenuLampiran({
       if (previewURL) URL.revokeObjectURL(previewURL);
     };
   }, [previewURL]);
+
+  // Sinkronisasi order lokal dengan props
+  useEffect(() => {
+    setLocalOrder([...lampirans]);
+  }, [lampirans]);
 
   /* ============================================================
      RENDER

@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       ROOT_STORAGE,
       tahun,
       jenisLaporan,
-      "lampiran_utama"
+      "lampiran_pendukung"
     );
 
     const fileNames = fs.existsSync(targetFolder)
@@ -34,7 +34,7 @@ export async function GET(req: Request) {
       const fileBuffer = fs.readFileSync(path.join(targetFolder, fileName));
       return {
         name: fileName,
-        data: fileBuffer.toString("base64"), // frontend nanti bisa convert ke File
+        data: fileBuffer.toString("base64"),
       };
     });
 
